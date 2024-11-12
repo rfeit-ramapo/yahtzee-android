@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Yahtzee</string>
+    <string name="yahtzee_intro">Welcome to Yahtzee! Follow instructions to play the game. Press the button to continue.</string>
 </resources>
