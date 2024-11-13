@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Yahtzee</string>
     <string name="yahtzee_intro">Welcome to Yahtzee! Follow instructions to play the game. Press the button to continue.</string>
+    <string name="determine_player">Roll to determine who will go first. Player die is on the left, and computer on the right.</string>
+    <string name="round">"Round: "</string>
 </resources>
