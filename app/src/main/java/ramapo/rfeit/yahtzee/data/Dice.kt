@@ -10,13 +10,9 @@ class Dice {
     }
 
     // Properties
-    private var diceList = MutableList(NUM_DICE) { 1 }
-    private var diceCount = MutableList(NUM_DICE_FACES) { 0 }
-    private var locked = MutableList(NUM_DICE_FACES) { 0 }
-
-    // Selectors
-    fun getLockedDice(): List<Int> = locked
-    fun getDiceCount(): List<Int> = diceCount
+    var diceList = MutableList(NUM_DICE) { 1 }
+    var diceCount = MutableList(NUM_DICE_FACES) { 0 }
+    var locked = MutableList(NUM_DICE_FACES) { 0 }
 
     // Functions
 
@@ -61,14 +57,16 @@ class Dice {
 
     // Function to roll all dice that are not locked
     fun rollAll(): List<Int> {
+        diceCount = mutableListOf(0, 0, 0, 0, 0, 0)
         val lockedRemaining = locked.toMutableList()
-        for (i in diceList.indices) {
+        for (i in 0 until NUM_DICE) {
             if (lockedRemaining[diceList[i] - 1] > 0) {
                 lockedRemaining[diceList[i] - 1]--
+                diceCount[diceList[i] - 1]++
                 continue
             }
             diceList[i] = generateDieValue()
-            diceList[diceList[i] - 1]++
+            diceCount[diceList[i] - 1]++
         }
         return diceList
     }

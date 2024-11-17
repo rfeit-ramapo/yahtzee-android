@@ -14,7 +14,7 @@ import ramapo.rfeit.yahtzee.R
 import ramapo.rfeit.yahtzee.ui.components.NextButton
 
 @Composable
-fun IntroScreen(onStartGame: () -> Unit) {
+fun IntroScreen(onStartGame: () -> Unit = {}, onLoadGame: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth(), // This stretches the Column to the full width of the screen
         horizontalAlignment = Alignment.CenterHorizontally

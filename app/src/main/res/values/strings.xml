@@ -1,6 +1,13 @@
 <resources>
     <string name="app_name">Yahtzee</string>
-    <string name="yahtzee_intro">Welcome to Yahtzee! Follow instructions to play the game. Press the button to continue.</string>
+    <string name="yahtzee_intro">Welcome to Yahtzee! Follow instructions to play the game. Help will be available when appropriate via a button at the bottom of the screen. Press next to continue.</string>
     <string name="determine_player">Roll to determine who will go first. Player die is on the left, and computer on the right.</string>
     <string name="round">"Round: "</string>
+    <string name="determine_player_tie">You and the computer tied! Please roll again.</string>
+    <string name="determine_player_human">You will go first.</string>
+    <string name="determine_player_comp">The computer will go first.</string>
+    <string name="roll_button_desc">Roll randomly on left; manual input on right.</string>
+    <string name="roll_instruction">Click the left button to roll dice; click the right button to manually input roll.</string>
+    <string name="reroll_instruction_human">Locked dice are displayed in red. Select unlocked dice to reroll; they will be highlighted in blue. If none are selected, you must stand.</string>
+    <string name="stand_instruction_comp">The computer has decided to stand. Press next to continue.</string>
 </resources>
