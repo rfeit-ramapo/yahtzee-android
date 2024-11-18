@@ -49,8 +49,8 @@ class GameViewModel(application: Application?): ViewModel() {
     var selectedDice = MutableLiveData(mutableListOf(false, false, false, false, false))
 
     // LiveData for singular rolls for UI access
-    val dieRollPlayer = MutableLiveData<Int>(1)
-    val dieRollComp = MutableLiveData<Int>(1)
+    val dieRollPlayer = MutableLiveData(1)
+    val dieRollComp = MutableLiveData(1)
 
     // Strategizing
     private val _strategyEngine = StrategyEngine()
@@ -70,11 +70,11 @@ class GameViewModel(application: Application?): ViewModel() {
     }
 
     fun serializeSave(fileName: MutableState<String>): Boolean {
-        return _serializer.saveGame(_roundNum.value!!, _scorecard.value!!, fileName.value)
+        return _serializer.saveGame(_roundNum.value!!, _scorecard.value, fileName.value)
     }
 
     fun isGameOver(): Boolean {
-        return _scorecard.value!!.isFull()
+        return _scorecard.value.isFull()
     }
 
     // Function to switch the current player
@@ -108,7 +108,8 @@ class GameViewModel(application: Application?): ViewModel() {
     // Function to prepare dice before a roll
     fun prepRolls() {
         // Create a list of kept dice by filtering the dice faces based on selected status
-        val keptDice = diceFaces.value!!.filterIndexed { index, _ ->
+        val keptDice = if (_rollNum.value == 1) diceFaces.value!! else
+            diceFaces.value!!.filterIndexed { index, _ ->
             selectedDice.value!!.getOrNull(index) == true
         }
         // Convert the kept dice into a count of each face using listToCount
@@ -137,7 +138,7 @@ class GameViewModel(application: Application?): ViewModel() {
     }
 
     private fun updateStrategy() {
-        _strategy.value = _strategyEngine.strategize(_scorecard.value!!, _dice.value!!)
+        _strategy.value = _strategyEngine.strategize(_scorecard.value, _dice.value!!)
     }
 
     // Select dice based on current strategy
@@ -232,6 +233,11 @@ class GameViewModel(application: Application?): ViewModel() {
         }
     }
 
+    fun getScoredPoints(categoryIndex: Int? = selectedCategories.value.firstOrNull()): Int {
+        if (categoryIndex == null) return 0
+        return _scorecard.value.categories[categoryIndex].score(_dice.value!!)
+    }
+
     // Validates a turn. If correct input, fills the category, awards points, and resets dice
     fun finalizeTurn(inPoints: Int? = null, inRound: Int? = null): Boolean {
         val categoryIndex = selectedCategories.value.firstOrNull()
@@ -243,8 +249,7 @@ class GameViewModel(application: Application?): ViewModel() {
             return true
         }
 
-        val selectedCategory = _scorecard.value.categories[categoryIndex]
-        val points = selectedCategory.score(_dice.value!!)
+        val points = getScoredPoints(categoryIndex)
         val round = _roundNum.value!!
 
         // Validate any inputs
@@ -253,23 +258,19 @@ class GameViewModel(application: Application?): ViewModel() {
         }
         _scorecard.value.fillCategory(categoryIndex, points, round, _currPlayer.value!!.internalName)
 
-        _roundNum.value = _roundNum.value!! + 1
         clearSelectedCategories()
         _currPlayer.value!!.addScore(points)
-        _currPlayer.value = _currPlayer.value
+        _humPlayer.value = _humPlayer.value
+        _compPlayer.value = _compPlayer.value
         _dice.value!!.resetDice()
         _dice.value = _dice.value
 
         return true
     }
 
-    // to do now
-    // add finalize turn functionality to the submission of the selected category
-        // must pass the one category thing, THEN ALSO the above function
-        // computer can safely ignore any inputs and just run finalize turn
-        // small box of round number and points earned should be available
-            // help autofills these with correct values
-        // change error message to reflect that the issue may be the round or points
+    fun nextRound() {
+        _roundNum.value = _roundNum.value!! + 1
+    }
 
     // create the round summary screen
     // create end screen

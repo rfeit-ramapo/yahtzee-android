@@ -10,7 +10,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
 import ramapo.rfeit.yahtzee.ui.screens.DeterminePlayerScreen
+import ramapo.rfeit.yahtzee.ui.screens.EndScreen
 import ramapo.rfeit.yahtzee.ui.screens.IntroScreen
+import ramapo.rfeit.yahtzee.ui.screens.RoundSummaryScreen
 import ramapo.rfeit.yahtzee.ui.screens.SerializeLoadScreen
 import ramapo.rfeit.yahtzee.ui.screens.SerializeSaveScreen
 import ramapo.rfeit.yahtzee.ui.screens.TurnScreen
@@ -32,18 +34,18 @@ fun ScreenManager() {
         GameScreen.INTRO -> IntroScreen(
             onStartGame = { currentScreen = GameScreen.DETERMINE_PLAYER },
             onLoadGame = { currentScreen = GameScreen.SERIALIZE_LOAD })
-        GameScreen.SERIALIZE_LOAD -> SerializeLoadScreen(
-            onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
-            gameViewModel = gameViewModel)
         GameScreen.DETERMINE_PLAYER -> DeterminePlayerScreen(onNext = {currentScreen = GameScreen.ROUND}, gameViewModel = gameViewModel)
         GameScreen.ROUND -> TurnScreen(
             onNext = { currentScreen = GameScreen.ROUND_SUMMARY},
             onEndGame = { currentScreen = GameScreen.GAME_END},
             gameViewModel = gameViewModel)
-        GameScreen.ROUND_SUMMARY -> IntroScreen()
+        GameScreen.ROUND_SUMMARY -> RoundSummaryScreen({currentScreen = GameScreen.DETERMINE_PLAYER}, gameViewModel)
+        GameScreen.SERIALIZE_LOAD -> SerializeLoadScreen(
+            onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
+            gameViewModel = gameViewModel)
         GameScreen.SERIALIZE_SAVE -> SerializeSaveScreen(
             onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
             gameViewModel = gameViewModel)
-        GameScreen.GAME_END -> IntroScreen()
+        GameScreen.GAME_END -> EndScreen()
     }
 }

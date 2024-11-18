@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ramapo.rfeit.yahtzee.R
 import ramapo.rfeit.yahtzee.data.Human
+import ramapo.rfeit.yahtzee.ui.components.CategoryFillInputBox
 import ramapo.rfeit.yahtzee.ui.components.DiceSet
 import ramapo.rfeit.yahtzee.ui.components.InfoBox
 import ramapo.rfeit.yahtzee.ui.components.ManualDiceInput
@@ -72,10 +74,12 @@ fun TurnScreen(
         )
         TurnPhase.SELECT_CATEGORY -> SelectCategoryScreen(
             onNext = {
+                gameViewModel.nextRoll()
+                currentPhase.value = TurnPhase.ROLL
+
                 // End round if this was the second turn
                 if (isSecondTurn.value) {
                     isSecondTurn.value = false
-                    currentPhase.value = TurnPhase.ROLL
                     if (gameViewModel.isGameOver()) onEndGame()
                     else onNext()
                 }
@@ -83,13 +87,11 @@ fun TurnScreen(
                 else {
                     if (gameViewModel.isGameOver()) {
                         isSecondTurn.value = false
-                        currentPhase.value = TurnPhase.ROLL
                         onEndGame()
                     } else {
                         isSecondTurn.value = true
                         if (playerTurn) gameViewModel.switchToComputer()
                         else gameViewModel.switchToHuman()
-                        currentPhase.value = TurnPhase.ROLL
                     }
                 }
             },
@@ -180,6 +182,7 @@ fun RollScreen(
             }
             // Otherwise, provide random and automatic options
             else {
+                println("selectedCount is $selectedCount")
                 RollButton({ onRoll() })
                 ManualDiceInput(if (rollNum == 1) 5 else selectedCount, {
                     diceValues -> onManualRoll(diceValues)
@@ -292,6 +295,10 @@ fun PursueCategoriesScreen(
     }
 }
 
+enum class SelectPhase {
+    CATEGORY, INPUT
+}
+
 @Composable
 fun SelectCategoryScreen(
     onNext: () -> Unit = {}, // switches turn, or ends the round
@@ -300,6 +307,8 @@ fun SelectCategoryScreen(
 ) {
     val showHelp = remember { mutableStateOf(false) }
     val isCategoryAvailable = (gameViewModel.strategy.value != null)
+
+    val currentPhase = remember { mutableStateOf(SelectPhase.CATEGORY) }
 
     Column(
         modifier = Modifier
@@ -314,7 +323,8 @@ fun SelectCategoryScreen(
         }
         else if (isHuman) {
             TurnInstructionText(stringResource(R.string.select_category_instructions_human))
-            if (showHelp.value) TurnInstructionText(gameViewModel.getStratString(isHuman = true))
+            if (showHelp.value && currentPhase.value == SelectPhase.CATEGORY)
+                TurnInstructionText(gameViewModel.getStratString(isHuman = true))
         } else {
             gameViewModel.autoSelectPursuedCategory()
             TurnInstructionText(gameViewModel.getStratString(isHuman = false))
@@ -323,27 +333,71 @@ fun SelectCategoryScreen(
         // Dice view
         DiceSet(gameViewModel)
 
-        // The submit button
-        SubmitButton(
-            onNext = {
-                showHelp.value = false
-                gameViewModel.finalizeTurn()
-                onNext()
-            },
-            validator = {
+        val correctRound = gameViewModel.roundNum.value
+        val correctPoints = gameViewModel.getScoredPoints()
+
+        val roundInput: MutableState<String> =
+            if (isHuman) remember { mutableStateOf("") }
+            else remember{mutableStateOf(correctRound.toString())}
+        val pointsInput: MutableState<String> =
+            if (isHuman) remember { mutableStateOf("") }
+            else remember{ mutableStateOf(correctPoints.toString())}
+
+        // Validation changes based on category selection vs round and points input phase
+        val validator = if (currentPhase.value == SelectPhase.CATEGORY) {
+            {
                 !isCategoryAvailable || (gameViewModel.selectedCategories.value.size == 1)
-            },
-            errorMessageId = R.string.no_category_error
+            }
+        } else {
+            {
+                if (roundInput.value == "" || pointsInput.value == "") false
+                else {
+                    val round = roundInput.value.toInt()
+                    val points = pointsInput.value.toInt()
+                    gameViewModel.finalizeTurn(points, round)
+                }
+            }
+        }
+
+        // Next step changes depending on category selection vs round and points input phase
+        val nextStep = if (currentPhase.value == SelectPhase.CATEGORY) {
+            {
+                showHelp.value = false
+                currentPhase.value = SelectPhase.INPUT
+            }
+        } else {
+            {
+                showHelp.value = false
+                onNext()
+            }
+        }
+
+        SubmitButton(
+            onNext = nextStep,
+            validator = validator,
+            errorMessageId =
+                if (currentPhase.value == SelectPhase.CATEGORY) R.string.no_category_error
+                else R.string.wrong_scorecard_inputs_error
         )
 
         InfoBox(gameViewModel, onHelp =
         if (isHuman) {
             {
-                gameViewModel.autoSelectPursuedCategory()
-                showHelp.value = !showHelp.value            }
+                if (currentPhase.value == SelectPhase.CATEGORY) gameViewModel.autoSelectPursuedCategory()
+                else {
+                    roundInput.value = correctRound.toString()
+                    pointsInput.value = correctPoints.toString()
+                }
+                showHelp.value = !showHelp.value
+            }
         } else null)
 
-        ScorecardTable(gameViewModel, if (isHuman) SelectLimit.ONE_AVAILABLE else SelectLimit.DISABLED)
+        if (currentPhase.value == SelectPhase.CATEGORY) {
+            ScorecardTable(gameViewModel, if (isHuman) SelectLimit.ONE_AVAILABLE else SelectLimit.DISABLED)
+        }
+        else {
+            CategoryFillInputBox(isHuman, roundInput, pointsInput, showHelp)
+        }
     }
 }
 

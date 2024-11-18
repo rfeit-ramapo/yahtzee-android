@@ -26,7 +26,7 @@ class Dice {
 
     // Function to unlock all dice
     fun resetDice() {
-        locked = MutableList(NUM_DICE_FACES) { 0 }
+        locked = mutableListOf(0, 0, 0, 0, 0, 0)
         diceCount = mutableListOf(5, 0, 0, 0, 0, 0)
         diceList = mutableListOf(1, 1, 1, 1, 1)
     }

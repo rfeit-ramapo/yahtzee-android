@@ -21,4 +21,6 @@
     <string name="select_category_instructions_human">Please select a category to fill.</string>
     <string name="no_categories">There are no available categories to fill. Please proceed to the next turn.</string>
     <string name="no_category_error">Error: Please select a category to fill.</string>
+    <string name="wrong_scorecard_inputs_error">Incorrect input for Round or Points Earned. Please try again.</string>
+    <string name="round_summary">The round has ended. See the summary below.</string>
 </resources>

@@ -1,21 +1,30 @@
 package ramapo.rfeit.yahtzee.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -106,6 +118,92 @@ fun InfoBox(
                     .padding(4.dp)
             ) {
                 Text("Log", fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CategoryFillInputBox(
+    isHuman: Boolean = true,
+    roundInput: MutableState<String> = remember { mutableStateOf("") },
+    pointsInput: MutableState<String> = remember { mutableStateOf("") },
+    showHelp: MutableState<Boolean> = remember { mutableStateOf(false) },
+) {
+
+
+    Row(
+        modifier = Modifier
+            .padding(2.dp)
+            .border(1.dp, Color.Black, shape = RoundedCornerShape(4.dp)),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            if (isHuman) InfoText("Input the following for the selected category:")
+            else InfoText("The computer's scorecard info is shown below:")
+
+            HorizontalDivider(thickness = 2.dp, color = Color.Black)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.width(100.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    InfoText("Round")
+                    InfoText("Points Scored")
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        enabled = isHuman && !showHelp.value,
+                        value = roundInput.value,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || (newValue.all { it.isDigit() } && newValue.toIntOrNull()?.let { it > 0 } == true)) {
+                                roundInput.value = newValue
+                                Log.d("CategoryFillInputBox", "Set roundInput to: '${roundInput.value}'")
+                            }
+                        },
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(48.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp)
+                    )
+                    OutlinedTextField(
+                        enabled = isHuman && !showHelp.value,
+                        value = pointsInput.value,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || (newValue.all { it.isDigit() } && newValue.toIntOrNull()?.let { it > 0 } == true)) {
+                                pointsInput.value = newValue
+                                Log.d("CategoryFillInputBox", "Set pointsInput to: '${pointsInput.value}'")
+                            }
+                        },
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(48.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp)
+                    )
+                }
             }
         }
     }

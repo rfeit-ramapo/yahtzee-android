@@ -13,7 +13,7 @@ class StrategyEngine {
         for (i in 0 until Scorecard.NUM_CATEGORIES) {
             val strategy = categories[i].getRerollStrategy(dice)
             // If possible add the category. Skip Multiples if none of the current dice
-            if (strategy != null) {
+            if (strategy != null && strategy.maxScore != 0) {
                 // Skip Multiples if in "strict" mode and none of the current dice match
                 if (isStrict && i < 6 && strategy.currentScore == 0) continue
                 // Save the index of all possible categories.

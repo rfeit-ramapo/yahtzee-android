@@ -58,6 +58,7 @@ fun ManualDiceInput(
     num: Int,
     onDiceValuesSubmit: (List<Int>) -> Unit
 ) {
+    println("number of inputs is $num")
     var showDialog by remember { mutableStateOf(false) }
     val diceValues = remember { mutableStateListOf<String>().apply { repeat(num) { add("") } } }
 
