@@ -12,7 +12,10 @@ import androidx.compose.ui.unit.dp
 import ramapo.rfeit.yahtzee.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun NextButton(onNext: () -> Unit) {
@@ -21,7 +24,7 @@ fun NextButton(onNext: () -> Unit) {
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Black // Set background color to black
         ),
-        modifier = Modifier.padding(15.dp)
+        modifier = Modifier.padding(10.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.next_button),
@@ -38,7 +41,7 @@ fun RollButton(onRoll: () -> Unit) {
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Black // Set background color to black
         ),
-        modifier = Modifier.padding(15.dp)
+        modifier = Modifier.padding(10.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.roll_dice),
@@ -65,7 +68,7 @@ fun ManualDiceInput(
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Black // Set background color to black
         ),
-        modifier = Modifier.padding(15.dp)
+        modifier = Modifier.padding(10.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.keyboard),
@@ -141,12 +144,55 @@ fun StandButton(onNext: () -> Unit) {
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Black // Set background color to black
         ),
-        modifier = Modifier.padding(15.dp)
+        modifier = Modifier.padding(10.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.stand),
             contentDescription = null,
             modifier = Modifier.size(15.dp)
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SubmitButton(
+    onNext: () -> Unit = {},
+    validator: () -> Boolean = {true},
+    errorMessageId: Int = R.string.error,
+    showError: MutableState<Boolean> = remember { mutableStateOf(false) }
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(
+            onClick = {
+                if (validator()) {
+                    showError.value = false // Hide error if validation passes
+                    onNext() // Proceed with the action
+                } else {
+                    showError.value = true // Show error if validation fails
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black // Set background color to black
+            ),
+            modifier = Modifier.padding(10.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.next_button),
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+            )
+        }
+
+        // Error message
+        if (showError.value) {
+            Text(
+                text = stringResource(errorMessageId),
+                color = Color.Red,
+                fontSize = 14.sp
+            )
+        }
     }
 }

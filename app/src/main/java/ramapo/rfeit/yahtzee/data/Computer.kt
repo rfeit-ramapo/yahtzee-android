@@ -25,11 +25,12 @@ class Computer : Player("The computer", "Computer") {
     override fun listAvailableCategories(strat: StrategyEngine, dice: Dice): List<Int> {
         println("\nListing all available categories, given the dice set so far...")
 
-        val availableCategories = strat.getPossibleCategories(dice).map { it + 1 }
-        availableCategories.forEach { print("$it ") }
+        //val availableCategories = strat.getPossibleCategories(dice).map { it + 1 }
+        //availableCategories.forEach { print("$it ") }
         println()
 
-        return availableCategories
+        //return availableCategories
+        return listOf()
     }
 
     /**
@@ -39,7 +40,7 @@ class Computer : Player("The computer", "Computer") {
      * @param dice The dice object for determining possibilities
      */
     override fun pursueCategories(strat: StrategyEngine, availableCategories: List<Int>, dice: Dice) {
-        mStrat = strat.strategize(dice)
+        //mStrat = strat.strategize(dice)
         println()
         mStrat.print(false)
     }
@@ -72,7 +73,7 @@ class Computer : Player("The computer", "Computer") {
         availableCategories: List<Int>,
         dice: Dice
     ) {
-        mStrat = strat.strategize(dice)
+        //mStrat = strat.strategize(dice)
         addScore(mStrat.currentScore)
         mStrat.enact(scorecard, round)
     }

@@ -2,6 +2,7 @@ package ramapo.rfeit.yahtzee.data
 
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.io.PrintWriter
 
@@ -9,7 +10,7 @@ class Serializer(private val context: Context?) {
 
     fun loadGame(
         roundNum: MutableLiveData<Int>,
-        scorecard: MutableLiveData<Scorecard>,
+        scorecard: MutableStateFlow<Scorecard>,
         humPlayer: MutableLiveData<Human>,
         compPlayer: MutableLiveData<Computer>,
         filename: String): Boolean {
@@ -135,7 +136,7 @@ class Serializer(private val context: Context?) {
             writer.println("Scorecard:")
 
             // Loop through each category and save data
-            val categories = scorecard.getCategories()
+            val categories = scorecard.categories
             for (i in 0 until Scorecard.NUM_CATEGORIES) {
                 // If this category is not filled, just write a 0
                 if (!categories[i].isFull()) {

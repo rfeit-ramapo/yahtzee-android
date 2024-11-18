@@ -10,4 +10,8 @@
     <string name="roll_instruction">Click the left button to roll dice; click the right button to manually input roll.</string>
     <string name="reroll_instruction_human">Locked dice are displayed in red. Select unlocked dice to reroll; they will be highlighted in blue. If none are selected, you must stand.</string>
     <string name="stand_instruction_comp">The computer has decided to stand. Press next to continue.</string>
+    <string name="available_categories_instructions_human">Please select all available categories given the dice set below.</string>
+    <string name="available_categories_instructions_computer">The computer has selected all available categories given the dice set below.</string>
+    <string name="error">An error ocurred.</string>
+    <string name="incorrect_available">Incorrect categories selected. Please try again.</string>
 </resources>

@@ -18,7 +18,7 @@ abstract class Category(
 
     // Functions (abstract to be implemented by subclasses)
     abstract fun score(dice: Dice): Int
-    abstract fun getRerollStrategy(dice: Dice): Strategy
+    abstract fun getRerollStrategy(dice: Dice): Strategy?
 }
 // MultiplesCategory.kt
 
@@ -28,38 +28,38 @@ class MultiplesCategory(
     score: String,
     private val multipleIndex: Int,
 ) : Category(name, description, score) {
-    override fun score(aDice: Dice): Int {
+    override fun score(dice: Dice): Int {
         // The score = how many times this face appears * the value of the face
-        return aDice.diceCount[multipleIndex] * (multipleIndex + 1)
+        return dice.diceCount[multipleIndex] * (multipleIndex + 1)
     }
 
-    override fun getRerollStrategy(aDice: Dice): Strategy {
+    override fun getRerollStrategy(dice: Dice): Strategy? {
         // Return a default, 0 score strategy if this category has already been filled.
-        if (full) return Strategy()
+        if (full) return null
 
-        val currentScore = score(aDice)
-        val currentDiceCounts = aDice.diceCount
+        val currentScore = score(dice)
 
         // Try to determine what the best possible roll would look like.
-        val perfectScore = MutableList<Int>(Dice.NUM_DICE_FACES) { 0 }
+        val perfectScore = MutableList(Dice.NUM_DICE_FACES) { 0 }
+        perfectScore[multipleIndex] = Dice.NUM_DICE
 
         // Find all dice that are not locked and are not contributing to the current score.
-        val unlockedUnscored = aDice.getUnlockedUnscored(perfectScore)
+        val unlockedUnscored = dice.getUnlockedUnscored(perfectScore)
 
         // Determine how many dice can be rerolled.
         val rerolledDice = unlockedUnscored.sum()
 
         // Add all possible rerolls to the scoring face.
-        perfectScore[multipleIndex] = currentDiceCounts[multipleIndex] + rerolledDice
+        perfectScore[multipleIndex] = dice.diceCount[multipleIndex] + rerolledDice
 
         // Calculate maximum score from maximum possible dice of desired face
         val maxScore = (multipleIndex + 1) * perfectScore[multipleIndex]
 
         // Stand if there are no possible dice to reroll, or create a reroll strategy.
         return if (rerolledDice == 0) {
-            Strategy(currentScore, maxScore, this::class.simpleName!!)
+            Strategy(currentScore, maxScore, name)
         } else {
-            Strategy(currentScore, maxScore, this::class.simpleName!!, aDice, perfectScore, unlockedUnscored)
+            Strategy(currentScore, maxScore, name, dice, perfectScore, unlockedUnscored)
         }
     }
 }
@@ -73,12 +73,26 @@ class KindCategory(
     private val numKind: Int,
 ) : Category(name, description, score) {
 
-    override fun score(aDice: Dice): Int {
+    override fun score(dice: Dice): Int {
         var conditionMet = false
         var score = 0
 
         // Loop through counts for each face
-        val diceValues = aDice.diceCount
+        for (i in dice.diceCount.indices) {
+            // Calculate score by adding face value * count
+            score += dice.diceCount[i] * (i + 1)
+            // If there are enough of the same kind, the condition is met
+            if (dice.diceCount[i] >= numKind) conditionMet = true
+        }
+        // Either 0, or the sum of all dice faces
+        return score * if (conditionMet) 1 else 0
+    }
+
+    private fun score(diceValues: MutableList<Int>): Int {
+        var conditionMet = false
+        var score = 0
+
+        // Loop through counts for each face
         for (i in diceValues.indices) {
             // Calculate score by adding face value * count
             score += diceValues[i] * (i + 1)
@@ -89,42 +103,26 @@ class KindCategory(
         return score * if (conditionMet) 1 else 0
     }
 
-    fun score(aDiceValues: MutableList<Int>): Int {
-        var conditionMet = false
-        var score = 0
-
-        // Loop through counts for each face
-        for (i in aDiceValues.indices) {
-            // Calculate score by adding face value * count
-            score += aDiceValues[i] * (i + 1)
-            // If there are enough of the same kind, the condition is met
-            if (aDiceValues[i] >= numKind) conditionMet = true
-        }
-        // Either 0, or the sum of all dice faces
-        return score * if (conditionMet) 1 else 0
-    }
-
-    override fun getRerollStrategy(aDice: Dice): Strategy {
+    override fun getRerollStrategy(dice: Dice): Strategy? {
         // Return a default, 0 score strategy if this category has already been filled.
-        if (full) return Strategy()
+        if (full) return null
 
-        val currentScore = score(aDice)
-        val diceValues = aDice.diceCount
+        val currentScore = score(dice)
 
         // Try to determine what the best possible roll would look like.
-        var idealDice: MutableList<Int> = MutableList(Dice.NUM_DICE_FACES) { 0 }
+        var idealDice: MutableList<Int>
         var rerollable: MutableList<Int>
 
         // Loop through each dice face counting down. (The best score comes from higher faces.)
         for (i in Dice.NUM_DICE_FACES - 1 downTo 0) {
-            val minimumScore = MutableList<Int>(Dice.NUM_DICE_FACES) { 0 }
+            val minimumScore = MutableList(Dice.NUM_DICE_FACES) { 0 }
             minimumScore[i] = numKind
 
             // Set rerollable as any non-essential dice for scoring.
-            rerollable = aDice.getUnlockedUnscored(minimumScore).toMutableList()
+            rerollable = dice.getUnlockedUnscored(minimumScore).toMutableList()
 
             // Ideal dice set must at minimum include locked dice.
-            idealDice = aDice.locked.toMutableList()
+            idealDice = dice.locked.toMutableList()
 
             // Loop through each dice face value to convert rerollable dice
             for (j in 0 until Dice.NUM_DICE_FACES) {
@@ -144,14 +142,14 @@ class KindCategory(
 
             // If the requisite number of scoring faces were reached...
             if (idealDice[i] >= numKind) {
-                rerollable = aDice.getUnlockedUnscored(idealDice).toMutableList()
+                rerollable = dice.getUnlockedUnscored(idealDice).toMutableList()
                 val maxScore = score(idealDice)
-                return Strategy(currentScore, maxScore, this::class.simpleName!!, aDice, idealDice, rerollable)
+                return Strategy(currentScore, maxScore, name, dice, idealDice, rerollable)
             }
         }
 
         // If no face values returned, this means it is impossible to get this category.
-        return Strategy()
+        return null
     }
 }
 
@@ -163,12 +161,12 @@ class FullHouseCategory(
     score: String,
 ) : Category(name, description, score) {
 
-    override fun score(aDice: Dice): Int {
+    override fun score(dice: Dice): Int {
         var condition1Met = false
         var condition2Met = false
 
         // Loop through counts for each face
-        val diceValues = aDice.diceCount
+        val diceValues = dice.diceCount
         for (i in diceValues.indices) {
             // 3 faces are the same
             if (diceValues[i] == 3) condition1Met = true
@@ -176,20 +174,20 @@ class FullHouseCategory(
             else if (diceValues[i] == 2) condition2Met = true
         }
 
-        // Return the score only if both conditions were met, otherwise 0
-        return 25 * if (condition1Met && condition2Met) 1 else 0
+        // Return the score (25 for Full House) only if both conditions were met, otherwise 0
+        return if (condition1Met && condition2Met) 25 else 0
     }
 
-    override fun getRerollStrategy(aDice: Dice): Strategy {
-        // Return a default, 0 score strategy if this category has already been filled.
-        if (full) return Strategy()
+    override fun getRerollStrategy(dice: Dice): Strategy? {
+        // Return a default, 0-score strategy if this category has already been filled.
+        if (full) return null
 
         // If this scores, stand because you always get maximum points in this category.
-        val currentScore = score(aDice)
-        if (currentScore != 0) return Strategy(currentScore, currentScore, this::class.simpleName!!)
+        val currentScore = score(dice)
+        if (currentScore > 0) return Strategy(currentScore, currentScore, name)
 
         // Check locked dice to see if this strategy is possible.
-        val lockedDice = aDice.locked
+        val lockedDice = dice.locked
         var lockedFaces = 0
         var lockedMode1 = -1
         var lockedMode2 = -1
@@ -198,14 +196,69 @@ class FullHouseCategory(
         // Loop through each dice face and check for locked dice.
         for (i in 0 until Dice.NUM_DICE_FACES) {
             if (lockedDice[i] > 0) {
-                // Check if this is the new mode amongst locked dice.
                 if (lockedFaces > 0 && lockedDice[i] > lockedMaxCount) {
-                    // handle updating modes here
+                    lockedMaxCount = lockedDice[i]
+                    lockedMode2 = lockedMode1
+                    lockedMode1 = i
+                } else {
+                    lockedMode2 = i
+                }
+                lockedFaces++
+            }
+            // Impossible to score if a face has more than 3 locked dice, so return null.
+            if (lockedDice[i] > 3) return null
+        }
+        // Impossible to score if more than two face values have locked dice, so return null.
+        if (lockedFaces > 2) return null
+
+        // Check the mode among all dice.
+        var mode1 = -1
+        var mode2 = -1
+        var maxCount1 = 0
+        var maxCount2 = 0
+
+        val diceValues = dice.diceCount
+        for (i in 0 until Dice.NUM_DICE_FACES) {
+            if (diceValues[i] > maxCount1) {
+                // Shift current mode to secondary.
+                mode2 = mode1
+                maxCount2 = maxCount1
+                // Set new mode.
+                mode1 = i
+                maxCount1 = diceValues[i]
+            } else if (diceValues[i] > maxCount2) {
+                // Replace secondary mode.
+                mode2 = i
+                maxCount2 = diceValues[i]
+            }
+        }
+
+        // Check which mode values to use.
+        if (maxCount1 < 2) mode1 = -1
+        if (maxCount2 < 2) mode2 = -1
+
+        if (lockedMode1 >= 0) {
+            if (lockedMode2 >= 0) {
+                mode1 = lockedMode1
+                mode2 = lockedMode2
+            } else if (mode1 != lockedMode1) {
+                if (maxCount1 > lockedMaxCount) {
+                    mode2 = lockedMode1
+                } else {
+                    mode2 = mode1
+                    mode1 = lockedMode1
                 }
             }
         }
 
-        return Strategy()
+        // Ideal dice will always be 3 of mode1 and 2 of mode2.
+        val idealDice = MutableList(Dice.NUM_DICE_FACES) { 0 }
+        if (mode1 >= 0) idealDice[mode1] = 3
+        if (mode2 >= 0) idealDice[mode2] = 2
+
+        // Return a strategy that rerolls all non-scoring dice.
+        val toReroll = dice.getUnlockedUnscored(idealDice)
+        return Strategy(currentScore, 25, name, dice, idealDice, toReroll)
     }
 }
 
@@ -218,12 +271,12 @@ class StraightCategory(
 ) : Category(name, description, score) {
 
     // Score function for Straight category
-    override fun score(a_dice: Dice): Int {
+    override fun score(dice: Dice): Int {
         var streak = 0
 
         // Loop through dice face counts
-        val diceValues = a_dice.diceCount
-        for (i in 0 until 6) {
+        val diceValues = dice.diceCount
+        for (i in 0 until Dice.NUM_DICE_FACES) {
             // Add to the streak for every successive face that exists
             if (diceValues[i] >= 1) streak++
             // Otherwise, reset the streak
@@ -238,13 +291,13 @@ class StraightCategory(
     }
 
     // Get Reroll Strategy function for Straight category
-    override fun getRerollStrategy(a_dice: Dice): Strategy {
+    override fun getRerollStrategy(dice: Dice): Strategy? {
         // Return a default, 0 score strategy if this category has already been filled.
-        if (full) return Strategy()
+        if (full) return null
 
         // If this scores, stand because you always get maximum points in this category.
-        val currentScore = score(a_dice)
-        if (currentScore != 0) return Strategy(currentScore, currentScore, name)
+        val currentScore = score(dice)
+        if (currentScore > 0) return Strategy(currentScore, currentScore, name)
 
         // If this doesn't score, decide which dice to reroll.
         val dicesetsToCheck = mutableListOf<List<Int>>()
@@ -262,13 +315,13 @@ class StraightCategory(
         var toReroll = mutableListOf<Int>()
         var idealDice = mutableListOf<Int>()
 
-        val diceValues = a_dice.diceCount
-        val lockedDice = a_dice.locked
+        val diceValues = dice.diceCount
+        val lockedDice = dice.locked
 
         // Go through each possible configuration to check which is possible and/or the best.
         for (config in dicesetsToCheck) {
-            val straightAttempt = mutableListOf<Int>().apply { addAll(lockedDice) }
-            val checkRerolls = a_dice.getUnlockedUnscored(config).toMutableList()
+            val straightAttempt = lockedDice.toMutableList()
+            val checkRerolls = dice.getUnlockedUnscored(config).toMutableList()
             val rerollsAvailable = checkRerolls.sum()
 
             var rerollsNeeded = 0
@@ -300,10 +353,10 @@ class StraightCategory(
         }
 
         // If there were no rerolls, this means that every config failed and this category is impossible given the current dice set.
-        if (minRerollNum == 0) return Strategy()
+        if (minRerollNum == 0) return null
 
         // Otherwise, return the best configuration found.
-        return Strategy(currentScore, scoreValue, name, a_dice, idealDice, toReroll)
+        return Strategy(currentScore, scoreValue, name, dice, idealDice, toReroll)
     }
 }
 
@@ -319,26 +372,27 @@ class YahtzeeCategory(
 ) : Category(name, description, score) {
 
     // Score function for Yahtzee category
-    override fun score(a_dice: Dice): Int {
-        val diceValues = a_dice.diceCount
+    override fun score(dice: Dice): Int {
+        val diceValues = dice.diceCount
         for (i in diceValues.indices) {
-            if (diceValues[i] == Dice.NUM_DICE) return YAHTZEE_SCORE
+            // Always return max score if condition is met (50)
+            if (diceValues[i] == Dice.NUM_DICE) return 50
         }
 
         return 0
     }
 
     // Get Reroll Strategy function for Yahtzee category
-    override fun getRerollStrategy(a_dice: Dice): Strategy {
+    override fun getRerollStrategy(dice: Dice): Strategy? {
         // Return a default, 0 score strategy if this category has already been filled.
-        if (full) return Strategy()
+        if (full) return null
 
         // If this scores, stand because you always get maximum points in this category
-        val currentScore = score(a_dice)
-        if (currentScore != 0) return Strategy(currentScore, currentScore, name)
+        val currentScore = score(dice)
+        if (currentScore > 0) return Strategy(currentScore, currentScore, name)
 
         // Check locked dice to see if this strategy is possible.
-        val lockedDice = a_dice.locked
+        val lockedDice = dice.locked
         var lockedFaces = 0
         var lockedIndex = -1
 
@@ -350,7 +404,7 @@ class YahtzeeCategory(
             }
         }
         // Impossible if more than one face value has locked dice; return empty Strategy.
-        if (lockedFaces > 1) return Strategy()
+        if (lockedFaces > 1) return null
 
         // If there are locked dice, use those to score.
         val idealDice = MutableList(6) { 0 }
@@ -359,7 +413,7 @@ class YahtzeeCategory(
         else {
             var mode = -1
             var maxCount = 0
-            val diceValues = a_dice.diceCount
+            val diceValues = dice.diceCount
             for (i in 0 until Dice.NUM_DICE_FACES) {
                 if (diceValues[i] >= maxCount) {
                     mode = i
@@ -370,8 +424,8 @@ class YahtzeeCategory(
         }
 
         // Return reroll strategy based on determined dice.
-        val toReroll = a_dice.getUnlockedUnscored(idealDice)
-        return Strategy(currentScore, YAHTZEE_SCORE, name, a_dice, idealDice, toReroll)
+        val toReroll = dice.getUnlockedUnscored(idealDice)
+        return Strategy(currentScore, YAHTZEE_SCORE, name, dice, idealDice, toReroll)
     }
 
     companion object {

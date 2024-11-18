@@ -11,7 +11,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ramapo.rfeit.yahtzee.R
+import ramapo.rfeit.yahtzee.ui.components.DiceSet
 import ramapo.rfeit.yahtzee.ui.components.NextButton
+import ramapo.rfeit.yahtzee.ui.components.ScorecardTable
 
 @Composable
 fun IntroScreen(onStartGame: () -> Unit = {}, onLoadGame: () -> Unit = {}) {
@@ -30,6 +32,6 @@ fun IntroText() {
         text = stringResource(R.string.yahtzee_intro),
         fontSize = 15.sp,
         lineHeight = 25.sp,
-        modifier = Modifier.padding(24.dp)
+        modifier = Modifier.padding(15.dp)
     )
 }

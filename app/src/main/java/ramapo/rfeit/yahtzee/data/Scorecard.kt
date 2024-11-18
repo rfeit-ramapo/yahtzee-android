@@ -11,13 +11,13 @@ class Scorecard {
     private var numFilled = 0
 
     // A mutable list containing Category objects
-    private val categories: MutableList<Category> = mutableListOf(
-        MultiplesCategory("Aces", "Any combination", "Sum of dice with the number 1", 1),
-        MultiplesCategory("Twos", "Any combination", "Sum of dice with the number 2", 2),
-        MultiplesCategory("Threes", "Any combination", "Sum of dice with the number 3", 3),
-        MultiplesCategory("Fours", "Any combination", "Sum of dice with the number 4", 4),
-        MultiplesCategory("Fives", "Any combination", "Sum of dice with the number 5", 5),
-        MultiplesCategory("Sixes", "Any combination", "Sum of dice with the number 6", 6),
+    val categories: List<Category> = listOf(
+        MultiplesCategory("Aces", "Any combination", "Sum of dice with the number 1", 0),
+        MultiplesCategory("Twos", "Any combination", "Sum of dice with the number 2", 1),
+        MultiplesCategory("Threes", "Any combination", "Sum of dice with the number 3", 2),
+        MultiplesCategory("Fours", "Any combination", "Sum of dice with the number 4", 3),
+        MultiplesCategory("Fives", "Any combination", "Sum of dice with the number 5", 4),
+        MultiplesCategory("Sixes", "Any combination", "Sum of dice with the number 6", 5),
         KindCategory("Three of a Kind", "At least three dice the same", "Sum of all the dice", 3),
         KindCategory("Four of a Kind", "At least four dice the same", "Sum of all the dice", 4),
         FullHouseCategory("Full House", "Three of one number and two of another", "25"),
@@ -27,10 +27,6 @@ class Scorecard {
     )
 
     // Selectors
-
-    fun getCategories(): List<Category> = categories
-
-    fun getCategory(index: Int): Category = categories[index]
 
     fun isFull(): Boolean = numFilled == NUM_CATEGORIES
 

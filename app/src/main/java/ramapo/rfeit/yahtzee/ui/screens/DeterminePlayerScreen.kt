@@ -24,6 +24,7 @@ import ramapo.rfeit.yahtzee.ui.components.Die
 import ramapo.rfeit.yahtzee.ui.components.ManualDiceInput
 import ramapo.rfeit.yahtzee.ui.components.NextButton
 import ramapo.rfeit.yahtzee.ui.components.RollButton
+import ramapo.rfeit.yahtzee.ui.components.ScorecardTable
 
 @Preview(showBackground = true)
 @Composable
@@ -109,6 +110,8 @@ fun DeterminePlayerScreen(
             text = stringResource(R.string.roll_button_desc),
             fontSize = 15.sp,
             lineHeight = 10.sp)
+
+        ScorecardTable(gameViewModel)
 
     }
 }

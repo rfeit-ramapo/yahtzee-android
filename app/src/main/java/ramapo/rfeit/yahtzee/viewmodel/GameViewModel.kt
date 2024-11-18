@@ -12,12 +12,20 @@ import ramapo.rfeit.yahtzee.data.Human
 import ramapo.rfeit.yahtzee.data.Scorecard
 import ramapo.rfeit.yahtzee.data.Serializer
 import androidx.lifecycle.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ramapo.rfeit.yahtzee.data.Player
+import ramapo.rfeit.yahtzee.data.Strategy
+import ramapo.rfeit.yahtzee.data.StrategyEngine
 
 class GameViewModel(application: Application?): ViewModel() {
-    // Scorecard
-    private val _scorecard = MutableLiveData(Scorecard())
-    val scorecard: LiveData<Scorecard> get() = _scorecard
+    // Use StateFlow instead of LiveData for better composition
+    private val _scorecard = MutableStateFlow(Scorecard())
+    val scorecard: StateFlow<Scorecard> = _scorecard.asStateFlow()
+
+    private val _selectedCategories = MutableStateFlow<List<Int>>(emptyList())
+    val selectedCategories: StateFlow<List<Int>> = _selectedCategories.asStateFlow()
 
     // Serializer - create Serializer instance here
     private val _serializer = Serializer(application?.applicationContext)
@@ -39,7 +47,6 @@ class GameViewModel(application: Application?): ViewModel() {
     // Dice
     private val _dice = MutableLiveData(Dice())
     var diceFaces = _dice.map { it.diceList }
-    val diceCounts = _dice.map { it.diceCount }
     var lockedDice = _dice.map { it.locked }
     var selectedDice = MutableLiveData(mutableListOf(false, false, false, false, false))
 
@@ -47,7 +54,10 @@ class GameViewModel(application: Application?): ViewModel() {
     val dieRollPlayer = MutableLiveData<Int>(1)
     val dieRollComp = MutableLiveData<Int>(1)
 
-    // Serialization
+    // Strategizing
+    private val _strategyEngine = StrategyEngine()
+    private val _strategy: MutableLiveData<Strategy?> = MutableLiveData(null)
+    val strategy: LiveData<Strategy?> get() = _strategy
 
 
     // Functions
@@ -118,22 +128,91 @@ class GameViewModel(application: Application?): ViewModel() {
 
     fun manualRoll(rollValues: List<Int>) {
         _dice.value!!.manualRoll(rollValues)
-        // set new strategy
+        updateStrategy()
     }
 
     fun autoRoll() {
         _dice.value!!.rollAll()
-        // set new strategy
+        updateStrategy()
     }
 
+    private fun updateStrategy() {
+        _strategy.value = _strategyEngine.strategize(_scorecard.value!!, _dice.value!!)
+    }
+
+    // Select dice based on current strategy
+    fun autoSelectDice() {
+        // Skip selection if there is no strategy, or the strategy is to stand
+        val toReroll = _strategy.value?.rerollCounts?.toMutableList() ?: return // Exit if no strategy is present
+        if (toReroll.size == 0) return
+
+        // Get the current dice counts and locked status
+        val lockedDice = _dice.value!!.locked.toMutableList()
+
+        // Create a mutable list to represent which individual dice are selected for rerolling
+        val newSelectedDice = MutableList(Dice.NUM_DICE) { false }
+
+        // Iterate through individual die to determine which should be rerolled
+        _dice.value!!.diceList.forEachIndexed { index, face ->
+            // Check if this die face is already locked (less rerolls are needed)
+            if (lockedDice[face - 1] > 0) {
+                // Reduce the locked count for this face
+                lockedDice[face - 1]--
+            } else if (toReroll[face - 1] > 0) {
+                // If the die face matches one we need to reroll, mark it for rerolling
+                newSelectedDice[index] = true
+                // Reduce the number of rerolls needed for this face
+                toReroll[face - 1]--
+            }
+        }
+
+        // Update the LiveData with the new selection
+        selectedDice.value = newSelectedDice
+    }
+
+    fun autoSelectAvailableCategories() {
+        _selectedCategories.value = getStrictAvailableCategories()
+    }
+
+    fun finalizeDice() {
+        _dice.value!!.lockAllDice()
+        updateStrategy()
+        _dice.value = _dice.value
+    }
+
+    fun getStrictAvailableCategories(): MutableList<Int> {
+        return _strategyEngine.getPossibleCategories(_scorecard.value!!, _dice.value!!)
+    }
+
+    fun toggleSelectedCategory(index: Int, removesOthers: Boolean = false) {
+        val currentList = _selectedCategories.value.toMutableList()
+
+        if (removesOthers) {
+            _selectedCategories.value = listOf(index)
+        } else {
+            if (currentList.contains(index)) {
+                currentList.remove(index)
+            } else {
+                currentList.add(index)
+            }
+            currentList.sort()
+            _selectedCategories.value = currentList
+        }
+    }
     // to do now
-    // create a function to update the strategy based on current dice
-    // make the computer select dice based on the strategy (except for first roll)
-    // create help box that gives info
     // do pursuit and selection screens post roll
+    // create help box that gives info: round number, roll number, player scores, help button?
+        // help info always given by computer player (explanation instead of instructions)
+
+    // create onNext function that either stops the game or switches turns or new round
+    // insert the save game thing here
+    // create the end screen
+
+    // clean up entire thing
+    // add the log stuff as you go and log button to help area
 
     // Round number
-    private val _roundNum = MutableLiveData<Int>(1)
+    private val _roundNum = MutableLiveData(1)
     val roundNum: LiveData<Int> get() = _roundNum
 
 }

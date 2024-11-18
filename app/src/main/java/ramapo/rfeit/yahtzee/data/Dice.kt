@@ -81,9 +81,14 @@ class Dice {
 
     // Get unlocked and unscored dice
     fun getUnlockedUnscored(required: List<Int>): List<Int> {
-        return diceList.filter { !required.contains(it) }
-            .groupBy { it }
-            .map { it.value.size }
+        val unlockedUnscored = MutableList(NUM_DICE_FACES) { 0 }
+        for (i in 0 until NUM_DICE_FACES) {
+            // Get whichever is greater: required dice of this face or locked dice of this face
+            // Subtract the above from current dice to see if there are extraneous dice of this face
+            // Take the max between this and zero to avoid negative numbers
+            unlockedUnscored[i] = maxOf(diceCount[i] - maxOf(required[i], locked[i]), 0)
+        }
+        return unlockedUnscored
     }
 
     // Get the free (unlocked) dice

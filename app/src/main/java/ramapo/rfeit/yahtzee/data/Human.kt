@@ -23,11 +23,12 @@ class Human : Player("You", "Human") {
      * @return A list of available categories by index [1,12]
      */
     override fun listAvailableCategories(strat: StrategyEngine, dice: Dice): List<Int> {
-        val availableCategories = strat.getPossibleCategories(dice).map { it + 1 }
+        //val availableCategories = strat.getPossibleCategories(dice).map { it + 1 }
         //val helpString = "The available categories are: " + availableCategories.joinToString(" ")
         //println("\nPlease list all scorecard categories available, given the dice set so far.")
         //Input.validateExactIntList(availableCategories, "categories", helpString)
-        return availableCategories
+        //return availableCategories
+        return listOf()
     }
 
     /**
@@ -38,7 +39,7 @@ class Human : Player("You", "Human") {
      */
     override fun pursueCategories(strat: StrategyEngine, availableCategories: List<Int>, dice: Dice) {
         println("Please input one or two categories to pursue.")
-        mHelpStrat = strat.strategize(dice)
+        //mHelpStrat = strat.strategize(dice)
         //Input.validateIntList(availableCategories, "categories", 0, mHelpStrat.getString(true))
     }
 
@@ -79,7 +80,7 @@ class Human : Player("You", "Human") {
             return
         }
 
-        mHelpStrat = strat.strategize(dice)
+        //mHelpStrat = strat.strategize(dice)
         println("Please identify the category you would like to claim.")
         // val chosenCategory = Input.validateInt(availableCategories, "categories", mHelpStrat.getString(true)) - 1
         println("Please enter the score earned for this category.")

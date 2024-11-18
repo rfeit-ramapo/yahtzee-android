@@ -14,12 +14,7 @@ class Strategy(
     fun getRerollDice(): List<Int> = rerollCounts
 
     // Operator overloads for comparison based on maxScore
-    infix fun lessThan(s: Strategy): Boolean = maxScore < s.maxScore
-    infix fun equalsTo(s: Strategy): Boolean = maxScore == s.maxScore
-    infix fun greaterThan(s: Strategy): Boolean = maxScore > s.maxScore
     infix fun lessThanOrEqual(s: Strategy): Boolean = maxScore <= s.maxScore
-    infix fun greaterThanOrEqual(s: Strategy): Boolean = maxScore >= s.maxScore
-    infix fun notEquals(s: Strategy): Boolean = maxScore != s.maxScore
 
     // Print the strategy in user-friendly format
     fun print(suggest: Boolean) {
@@ -27,12 +22,12 @@ class Strategy(
     }
 
     // Creates a user-friendly string describing this strategy
-    fun getString(suggest: Boolean): String {
+    fun getString(isForHuman: Boolean): String {
         var stratString = ""
 
         // Stand strategy - no fillable categories
         if (maxScore == 0) {
-            stratString = if (suggest) {
+            stratString = if (isForHuman) {
                 "I recommend that you stand because there are no fillable categories given your current dice set.\n"
             } else {
                 "The computer plans to stand because there are no fillable categories given its current dice set.\n"
@@ -41,7 +36,7 @@ class Strategy(
 
         // Stand strategy - already reached maximum score
         else if (currentScore == maxScore) {
-            stratString = if (suggest) {
+            stratString = if (isForHuman) {
                 "I recommend that you try for the $categoryName category with your current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
             } else {
                 "The computer plans to stand and try for the $categoryName category with its current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
@@ -50,7 +45,7 @@ class Strategy(
 
         // Reroll strategy - current score is not at its maximum potential
         else {
-            stratString = if (suggest) {
+            stratString = if (isForHuman) {
                 "I recommend that you try for the $categoryName category " +
                         if (targetDice.sum() > 0) "with ${printDice(targetDice)}" else "" +
                                 " because it gives the maximum possible points ($maxScore) among all the options. Therefore, ${printDice(rerollCounts)} should be rerolled.\n" +

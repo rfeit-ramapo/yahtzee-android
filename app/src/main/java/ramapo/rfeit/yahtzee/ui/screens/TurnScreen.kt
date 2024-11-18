@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
@@ -23,11 +25,13 @@ import ramapo.rfeit.yahtzee.ui.components.DiceSet
 import ramapo.rfeit.yahtzee.ui.components.ManualDiceInput
 import ramapo.rfeit.yahtzee.ui.components.NextButton
 import ramapo.rfeit.yahtzee.ui.components.RollButton
+import ramapo.rfeit.yahtzee.ui.components.ScorecardTable
 import ramapo.rfeit.yahtzee.ui.components.StandButton
+import ramapo.rfeit.yahtzee.ui.components.SubmitButton
 import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
 
 enum class TurnPhase {
-    ROLL, AVAILABLE_CATEGORIES, PURSUE_CATEGORIES, SELECT_DICE, SELECT_CATEGORY, END
+    ROLL, AVAILABLE_CATEGORIES, PURSUE_CATEGORIES, SELECT_CATEGORY, END
 }
 
 @Preview(showBackground = true)
@@ -42,18 +46,22 @@ fun TurnScreen(
 
 
     when (currentPhase.value) {
-        TurnPhase.ROLL -> RollScreen(isHuman = playerTurn, gameViewModel = gameViewModel)
+        TurnPhase.ROLL -> RollScreen(
+            onNext = {
+                gameViewModel.finalizeDice()
+                currentPhase.value = TurnPhase.SELECT_CATEGORY
+            },
+            afterRoll = { currentPhase.value = TurnPhase.AVAILABLE_CATEGORIES },
+            isHuman = playerTurn,
+            gameViewModel = gameViewModel)
+        TurnPhase.AVAILABLE_CATEGORIES -> AvailableCategoriesScreen(
+            onNext = {},
+            isHuman = playerTurn,
+            gameViewModel = gameViewModel
+        )
         else -> {}
     }
 
-
-
-    // for rolls
-    // instructions
-    // diceset
-    // random button (or next for computer)
-    // manual input (based on how many are locked)
-    // info on round number & roll number & scores
 
     // for after roll one - available categories
     // instructions/computer explanation
@@ -77,17 +85,6 @@ fun TurnScreen(
     // help button -> provides textual explanation
     // info on round number & roll number & scores
 
-    // for after roll one - select reroll
-    // instructions/computer explanation
-    // diceset
-        // clicking on them changes values
-        // red (locked) are not changeable
-        // others can be changed blue (to reroll)
-    // scorecard (not selectable, for reference)
-    // reroll button (or next for computer)
-        // changes to stand button no new are selected
-    // help button -> provides textual explanation of strategy
-    // info on round number & roll number & scores
 
     // for after stand/end - select category to pick
     // instructions/computer explanation
@@ -99,6 +96,11 @@ fun TurnScreen(
     // submit button (or next for computer)
         // only selectable if there are none available, or one is selected
         // error says "Please select one available category to fill."
+        // fills category, goes to end state
+            // end state shows result and updates some info:
+            // updates round number, if applicable
+            // updates categories & scores
+            // unlocks and resets all dice
     // help button -> provides textual explanation of strategy
     // info on round number & roll number & scores
 }
@@ -107,6 +109,7 @@ fun TurnScreen(
 @Composable
 fun RollScreen(
     onNext: () -> Unit = {}, // goes to the category selection screen; locks all dice
+    afterRoll: () -> Unit = {},
     isHuman: Boolean = true,
     gameViewModel: GameViewModel = GameViewModel(null)
 ) {
@@ -120,15 +123,31 @@ fun RollScreen(
     val onRoll = {
         gameViewModel.prepRolls()
         gameViewModel.autoRoll()
-        if (rollNum.intValue == 3) onNext()
-        else rollNum.intValue++
+        if (rollNum.intValue == 3) {
+            rollNum.intValue = 1
+            onNext()
+        }
+        else {
+            rollNum.intValue++
+            afterRoll()
+        }
     }
     val onManualRoll = {
         diceValues: List<Int> ->
             gameViewModel.prepRolls()
             gameViewModel.manualRoll(diceValues)
-            if (rollNum.intValue == 3) onNext()
-            else rollNum.intValue++
+            if (rollNum.intValue == 3) {
+                rollNum.intValue = 1
+                onNext()
+            }
+            else {
+                rollNum.intValue++
+                afterRoll()
+            }
+    }
+
+    if (rollNum.intValue > 1 && !isHuman) {
+        gameViewModel.autoSelectDice()
     }
 
     Column(
@@ -173,6 +192,43 @@ fun RollScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AvailableCategoriesScreen(
+    onNext: () -> Unit = {}, // goes to the category selection screen; locks all dice
+    isHuman: Boolean = true,
+    gameViewModel: GameViewModel = GameViewModel(null)
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Display instructions or explanation for available category selection
+        if (isHuman) {
+            TurnInstructionText(R.string.available_categories_instructions_human)
+        } else {
+            gameViewModel.autoSelectAvailableCategories()
+            TurnInstructionText(R.string.available_categories_instructions_computer)
+        }
+
+        // Dice view
+        DiceSet(gameViewModel)
+
+        // The submit button
+        SubmitButton(
+            onNext = onNext,
+            validator = {
+                gameViewModel.selectedCategories.value == gameViewModel.getStrictAvailableCategories()
+            },
+            errorMessageId = R.string.incorrect_available
+        )
+
+        ScorecardTable(gameViewModel)
+
+    }
+
 }
 
 @Composable
