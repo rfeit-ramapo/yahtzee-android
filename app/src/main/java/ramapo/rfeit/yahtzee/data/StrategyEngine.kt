@@ -15,7 +15,7 @@ class StrategyEngine {
             // If possible add the category. Skip Multiples if none of the current dice
             if (strategy != null) {
                 // Skip Multiples if in "strict" mode and none of the current dice match
-                if (isStrict && (!(i < 6 && strategy.currentScore == 0))) continue
+                if (isStrict && i < 6 && strategy.currentScore == 0) continue
                 // Save the index of all possible categories.
                 possibleCategories.add(i)
             }

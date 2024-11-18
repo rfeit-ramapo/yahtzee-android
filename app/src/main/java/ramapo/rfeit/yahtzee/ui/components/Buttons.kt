@@ -11,6 +11,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ramapo.rfeit.yahtzee.R
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
@@ -54,20 +56,14 @@ fun RollButton(onRoll: () -> Unit) {
 @Composable
 fun ManualDiceInput(
     num: Int,
-    onDiceValuesSubmit: (List<Int>) -> Unit // Callback function to access the dice values
+    onDiceValuesSubmit: (List<Int>) -> Unit
 ) {
-    // State for controlling the visibility of the dialog
     var showDialog by remember { mutableStateOf(false) }
-
-    // State for storing the input values for dice faces
     val diceValues = remember { mutableStateListOf<String>().apply { repeat(num) { add("") } } }
 
-    // Button that triggers the dialog
     Button(
         onClick = { showDialog = true },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Black // Set background color to black
-        ),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
         modifier = Modifier.padding(10.dp)
     ) {
         Image(
@@ -77,40 +73,45 @@ fun ManualDiceInput(
         )
     }
 
-    // Dialog that pops up when the button is clicked
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Enter Dice Values") },
             text = {
-                Column {
-                    // Input fields for each dice value
-                    diceValues.forEachIndexed { index, value ->
-                        OutlinedTextField(
-                            value = value,
-                            onValueChange = {
-                                if (it.length <= 1 && it.all { char -> char.isDigit() && char in '1'..'6' }) {
-                                    diceValues[index] = it
-                                }
-                            },
-                            label = { Text("Die ${index + 1}") },
-                            modifier = Modifier.fillMaxWidth().padding(8.dp)
-                        )
+                // Wrap the Column in a ScrollableColumn
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 300.dp) // Set a maximum height
+                            .verticalScroll(rememberScrollState()) // Make it scrollable
+                    ) {
+                        diceValues.forEachIndexed { index, value ->
+                            OutlinedTextField(
+                                value = value,
+                                onValueChange = {
+                                    if (it.length <= 1 && it.all { char -> char.isDigit() && char in '1'..'6' }) {
+                                        diceValues[index] = it
+                                    }
+                                },
+                                label = { Text("Die ${index + 1}") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        // Convert the dice input to integers and submit them
                         val diceList = diceValues.mapNotNull { it.toIntOrNull() }
                         if (diceList.size == num) {
-                            onDiceValuesSubmit(diceList) // Pass the values to the callback
+                            onDiceValuesSubmit(diceList)
                         } else {
-                            // Handle invalid input (you could show a toast, or another message)
                             println("Invalid input")
                         }
-                        showDialog = false // Close the dialog after submitting
+                        showDialog = false
                     }
                 ) {
                     Text("Submit")
@@ -118,7 +119,7 @@ fun ManualDiceInput(
             },
             dismissButton = {
                 Button(
-                    onClick = { showDialog = false } // Close dialog without doing anything
+                    onClick = { showDialog = false }
                 ) {
                     Text("Cancel")
                 }
@@ -194,5 +195,23 @@ fun SubmitButton(
                 fontSize = 14.sp
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HelpButton(onClick: () -> Unit = {}) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Black // Set background color to black
+        ),
+        modifier = Modifier.padding(10.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.help),
+            contentDescription = null,
+            modifier = Modifier.size(17.dp)
+        )
     }
 }

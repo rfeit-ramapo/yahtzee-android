@@ -25,21 +25,12 @@ class Strategy(
     fun getString(isForHuman: Boolean): String {
         var stratString = ""
 
-        // Stand strategy - no fillable categories
-        if (maxScore == 0) {
-            stratString = if (isForHuman) {
-                "I recommend that you stand because there are no fillable categories given your current dice set.\n"
-            } else {
-                "The computer plans to stand because there are no fillable categories given its current dice set.\n"
-            }
-        }
-
         // Stand strategy - already reached maximum score
-        else if (currentScore == maxScore) {
+        if (currentScore == maxScore) {
             stratString = if (isForHuman) {
-                "I recommend that you try for the $categoryName category with your current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
+                "I recommend that you stand and go for the $categoryName category with your current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
             } else {
-                "The computer plans to stand and try for the $categoryName category with its current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
+                "The computer plans to stand and go for the $categoryName category with its current dice set because it gives the maximum possible points ($maxScore) among all the options.\n"
             }
         }
 
@@ -47,7 +38,7 @@ class Strategy(
         else {
             stratString = if (isForHuman) {
                 "I recommend that you try for the $categoryName category " +
-                        if (targetDice.sum() > 0) "with ${printDice(targetDice)}" else "" +
+                        (if (targetDice.sum() > 0) "with ${printDice(targetDice)}" else "") +
                                 " because it gives the maximum possible points ($maxScore) among all the options. Therefore, ${printDice(rerollCounts)} should be rerolled.\n" +
                                 if (currentScore == 0) {
                                     "However, depending on dice rolls you may not be able to score in this category, so be cautious!\n"
@@ -56,7 +47,7 @@ class Strategy(
                                 }
             } else {
                 "The computer plans to try for the $categoryName category " +
-                        if (targetDice.sum() > 0) "with ${printDice(targetDice)}" else "" +
+                        (if (targetDice.sum() > 0) "with ${printDice(targetDice)}" else "") +
                                 " because it gives the maximum possible points ($maxScore) among all the options. Therefore, ${printDice(rerollCounts)} will be rerolled.\n" +
                                 if (currentScore != 0) {
                                     "At minimum, the computer will score $currentScore points in this category.\n"

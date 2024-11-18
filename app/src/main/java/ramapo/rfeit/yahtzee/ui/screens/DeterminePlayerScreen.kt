@@ -110,9 +110,6 @@ fun DeterminePlayerScreen(
             text = stringResource(R.string.roll_button_desc),
             fontSize = 15.sp,
             lineHeight = 10.sp)
-
-        ScorecardTable(gameViewModel)
-
     }
 }
 

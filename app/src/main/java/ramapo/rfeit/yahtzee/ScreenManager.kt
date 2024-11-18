@@ -17,7 +17,7 @@ import ramapo.rfeit.yahtzee.ui.screens.TurnScreen
 import ramapo.rfeit.yahtzee.viewmodel.GameViewModelFactory
 
 enum class GameScreen {
-    INTRO, DETERMINE_PLAYER, SERIALIZE_LOAD, SERIALIZE_SAVE, GAME_END, TURN
+    INTRO, DETERMINE_PLAYER, SERIALIZE_LOAD, SERIALIZE_SAVE, GAME_END, ROUND, ROUND_SUMMARY
 }
 
 @Composable
@@ -33,12 +33,14 @@ fun ScreenManager() {
             onStartGame = { currentScreen = GameScreen.DETERMINE_PLAYER },
             onLoadGame = { currentScreen = GameScreen.SERIALIZE_LOAD })
         GameScreen.SERIALIZE_LOAD -> SerializeLoadScreen(
-            onNext = { currentScreen = if (gameViewModel.isGameOver()) GameScreen.GAME_END else GameScreen.DETERMINE_PLAYER},
+            onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
             gameViewModel = gameViewModel)
-        GameScreen.DETERMINE_PLAYER -> DeterminePlayerScreen(onNext = {currentScreen = GameScreen.TURN}, gameViewModel = gameViewModel)
-        GameScreen.TURN -> TurnScreen(
-            onNext = { currentScreen = if (gameViewModel.isGameOver()) GameScreen.GAME_END else GameScreen.SERIALIZE_SAVE},
+        GameScreen.DETERMINE_PLAYER -> DeterminePlayerScreen(onNext = {currentScreen = GameScreen.ROUND}, gameViewModel = gameViewModel)
+        GameScreen.ROUND -> TurnScreen(
+            onNext = { currentScreen = GameScreen.ROUND_SUMMARY},
+            onEndGame = { currentScreen = GameScreen.GAME_END},
             gameViewModel = gameViewModel)
+        GameScreen.ROUND_SUMMARY -> IntroScreen()
         GameScreen.SERIALIZE_SAVE -> SerializeSaveScreen(
             onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
             gameViewModel = gameViewModel)

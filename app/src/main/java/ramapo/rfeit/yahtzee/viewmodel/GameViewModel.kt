@@ -33,8 +33,6 @@ class GameViewModel(application: Application?): ViewModel() {
     // Players
     private val _humPlayer = MutableLiveData(Human())
     private val _compPlayer = MutableLiveData(Computer())
-    val humPlayer: LiveData<Human> get() = _humPlayer
-    val compPlayer: LiveData<Computer> get() = _compPlayer
     val humScore: LiveData<Int> = _humPlayer.map { it.score }
     val compScore: LiveData<Int> = _compPlayer.map { it.score }
 
@@ -128,6 +126,8 @@ class GameViewModel(application: Application?): ViewModel() {
 
     fun manualRoll(rollValues: List<Int>) {
         _dice.value!!.manualRoll(rollValues)
+        // Explicitly update tp notify UI of change
+        _dice.value = _dice.value
         updateStrategy()
     }
 
@@ -181,7 +181,11 @@ class GameViewModel(application: Application?): ViewModel() {
     }
 
     fun getStrictAvailableCategories(): MutableList<Int> {
-        return _strategyEngine.getPossibleCategories(_scorecard.value!!, _dice.value!!)
+        return _strategyEngine.getPossibleCategories(_scorecard.value, _dice.value!!, true)
+    }
+
+    fun getAllAvailableCategories(): MutableList<Int> {
+        return _strategyEngine.getPossibleCategories(_scorecard.value, _dice.value!!, false)
     }
 
     fun toggleSelectedCategory(index: Int, removesOthers: Boolean = false) {
@@ -199,14 +203,81 @@ class GameViewModel(application: Application?): ViewModel() {
             _selectedCategories.value = currentList
         }
     }
-    // to do now
-    // do pursuit and selection screens post roll
-    // create help box that gives info: round number, roll number, player scores, help button?
-        // help info always given by computer player (explanation instead of instructions)
 
-    // create onNext function that either stops the game or switches turns or new round
-    // insert the save game thing here
-    // create the end screen
+    fun autoSelectPursuedCategory() {
+        // If no feasible strategy was found, do not select anything
+        if (_strategy.value == null) _selectedCategories.value = emptyList()
+        // Otherwise, select the best strategy
+        else _selectedCategories.value = listOf(_scorecard.value.getCategoryIndex(_strategy.value!!.categoryName))
+    }
+
+    fun clearSelectedCategories() {
+        _selectedCategories.value = emptyList()
+    }
+
+    fun getStratString(isHuman: Boolean): String {
+        return _strategy.value?.getString(isHuman) ?: "No available categories to pursue."
+    }
+
+    fun setRoll(num: Int?): Int? {
+        _rollNum.value = num
+        return num
+    }
+
+    fun nextRoll() {
+        when (_rollNum.value) {
+            null -> _rollNum.value = 1
+            3 -> _rollNum.value = null
+            else -> _rollNum.value = _rollNum.value!! + 1
+        }
+    }
+
+    // Validates a turn. If correct input, fills the category, awards points, and resets dice
+    fun finalizeTurn(inPoints: Int? = null, inRound: Int? = null): Boolean {
+        val categoryIndex = selectedCategories.value.firstOrNull()
+
+        // If not filling a category, just reset the dice and return
+        if (categoryIndex == null) {
+            _dice.value!!.resetDice()
+            _dice.value = _dice.value
+            return true
+        }
+
+        val selectedCategory = _scorecard.value.categories[categoryIndex]
+        val points = selectedCategory.score(_dice.value!!)
+        val round = _roundNum.value!!
+
+        // Validate any inputs
+        if (inPoints != null && inRound != null) {
+            if (inPoints != points || inRound != round) return false
+        }
+        _scorecard.value.fillCategory(categoryIndex, points, round, _currPlayer.value!!.internalName)
+
+        _roundNum.value = _roundNum.value!! + 1
+        clearSelectedCategories()
+        _currPlayer.value!!.addScore(points)
+        _currPlayer.value = _currPlayer.value
+        _dice.value!!.resetDice()
+        _dice.value = _dice.value
+
+        return true
+    }
+
+    // to do now
+    // add finalize turn functionality to the submission of the selected category
+        // must pass the one category thing, THEN ALSO the above function
+        // computer can safely ignore any inputs and just run finalize turn
+        // small box of round number and points earned should be available
+            // help autofills these with correct values
+        // change error message to reflect that the issue may be the round or points
+
+    // create the round summary screen
+    // create end screen
+    // fix up the determine player screen to work for already determined player
+    // test an entire game
+    // add in the load option to the intro screen and confirm that it works
+    // add in a save option to the round summary screen
+    // test that saving and loading works
 
     // clean up entire thing
     // add the log stuff as you go and log button to help area
@@ -214,5 +285,9 @@ class GameViewModel(application: Application?): ViewModel() {
     // Round number
     private val _roundNum = MutableLiveData(1)
     val roundNum: LiveData<Int> get() = _roundNum
+
+    // Roll number
+    private val _rollNum = MutableLiveData<Int?>(null)
+    val rollNum: LiveData<Int?> get() = _rollNum
 
 }

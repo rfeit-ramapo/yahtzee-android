@@ -14,4 +14,11 @@
     <string name="available_categories_instructions_computer">The computer has selected all available categories given the dice set below.</string>
     <string name="error">An error ocurred.</string>
     <string name="incorrect_available">Incorrect categories selected. Please try again.</string>
+    <string name="roll">"Roll: "</string>
+    <string name="hum_score">"Your score: "</string>
+    <string name="comp_score">"Computer\'s score: "</string>
+    <string name="pursue_categories_instructions_human">Please select which category or categories to pursue.</string>
+    <string name="select_category_instructions_human">Please select a category to fill.</string>
+    <string name="no_categories">There are no available categories to fill. Please proceed to the next turn.</string>
+    <string name="no_category_error">Error: Please select a category to fill.</string>
 </resources>

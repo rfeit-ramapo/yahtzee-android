@@ -25,8 +25,10 @@ class Dice {
     }
 
     // Function to unlock all dice
-    fun unlockAllDice() {
+    fun resetDice() {
         locked = MutableList(NUM_DICE_FACES) { 0 }
+        diceCount = mutableListOf(5, 0, 0, 0, 0, 0)
+        diceList = mutableListOf(1, 1, 1, 1, 1)
     }
 
     // Convert a list of dice to a count of each face
@@ -72,11 +74,12 @@ class Dice {
     }
 
     // Manual roll input for free dice
-    fun manualRoll(input: List<Int>) {
+    fun manualRoll(input: List<Int>): List<Int> {
         diceCount = locked.toMutableList()
         diceList = countToList(locked).toMutableList()
         diceList.addAll(input)
         input.forEach { face -> diceCount[face - 1]++ }
+        return diceList
     }
 
     // Get unlocked and unscored dice

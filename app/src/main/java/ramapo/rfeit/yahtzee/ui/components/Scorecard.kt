@@ -23,19 +23,33 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
+
+enum class SelectLimit {
+    NONE, ALL_AVAILABLE, ONE_AVAILABLE, DISABLED
+}
 
 @Preview(showBackground = true)
 @Composable
 fun ScorecardTable(
     gameViewModel: GameViewModel = GameViewModel(null),
+    selectLimit: SelectLimit = SelectLimit.DISABLED
 ) {
     // Use collectAsState() for both StateFlows
     val scorecard by gameViewModel.scorecard.collectAsState()
     val selectedCategories by gameViewModel.selectedCategories.collectAsState()
-    val expandedState = remember { mutableStateOf(false) }
+
+    // For ALL_AVAILABLE and ONE_AVAILABLE modes, get available categories
+    val availableCategories = remember(selectLimit) {
+        when (selectLimit) {
+            SelectLimit.ALL_AVAILABLE, SelectLimit.ONE_AVAILABLE ->
+                gameViewModel.getAllAvailableCategories()
+            else -> mutableListOf()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -52,41 +66,96 @@ fun ScorecardTable(
         }
         HorizontalDivider(thickness = 1.dp, color = Color.Black)
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (expandedState.value) Modifier.fillMaxHeight() else Modifier.height(300.dp)
-                )
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             items(
                 items = scorecard.categories,
                 key = { category ->
                     category.hashCode()
                 }
             ) { category ->
-                val isSelected = selectedCategories.contains(scorecard.categories.indexOf(category))
+                val categoryIndex = scorecard.categories.indexOf(category)
+                val isSelected = selectedCategories.contains(categoryIndex)
+
+                // Determine if the category is clickable based on SelectLimit
+                val isClickable = when (selectLimit) {
+                    SelectLimit.NONE -> true
+                    SelectLimit.DISABLED -> false
+                    SelectLimit.ALL_AVAILABLE -> availableCategories.contains(categoryIndex)
+                    SelectLimit.ONE_AVAILABLE -> availableCategories.contains(categoryIndex)
+                }
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                        .clickable {
-                            val index = scorecard.categories.indexOf(category)
-                            gameViewModel.toggleSelectedCategory(index)
-                        }
+                        .then(
+                            if (isClickable) {
+                                Modifier.clickable {
+                                    when (selectLimit) {
+                                        SelectLimit.NONE ->
+                                            gameViewModel.toggleSelectedCategory(categoryIndex)
+
+                                        SelectLimit.ALL_AVAILABLE ->
+                                            gameViewModel.toggleSelectedCategory(categoryIndex)
+
+                                        SelectLimit.ONE_AVAILABLE -> {
+                                            // Clear previous selections and select only this category
+                                            gameViewModel.toggleSelectedCategory(
+                                                categoryIndex,
+                                                removesOthers = true
+                                            )
+                                        }
+                                        else -> {}
+                                    }
+                                }
+                            } else Modifier
+                        )
                         .background(
-                            if (isSelected) Color(0xFF6200EE).copy(alpha = 0.2f) else Color.LightGray,
+                            when {
+                                isSelected -> Color(0xFF6200EE).copy(alpha = 0.2f)
+                                !isClickable -> Color.Gray.copy(alpha = 0.1f)
+                                else -> Color.LightGray
+                            },
                             shape = RoundedCornerShape(4.dp)
                         )
                         .padding(4.dp)
                 ) {
-                    TableCell(category.name, Modifier.weight(1f))
-                    TableCell(category.description, Modifier.weight(2f))
-                    TableCell(category.score.toString(), Modifier.weight(1f))
-                    TableCell(category.winner.ifEmpty { "-" }, Modifier.weight(1f))
-                    TableCell(if (category.points > 0) category.points.toString() else "-", Modifier.weight(1f))
-                    TableCell(if (category.round > 0) category.round.toString() else "-", Modifier.weight(1f))
+                    // Modify text color for non-clickable items
+                    val textStyle = if (isClickable)
+                        MaterialTheme.typography.bodyMedium
+                    else
+                        MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
+
+                    TableCell(
+                        text = category.name,
+                        modifier = Modifier.weight(1f),
+                        style = textStyle
+                    )
+                    TableCell(
+                        text = category.description,
+                        modifier = Modifier.weight(2f),
+                        style = textStyle
+                    )
+                    TableCell(
+                        text = category.score.toString(),
+                        modifier = Modifier.weight(1f),
+                        style = textStyle
+                    )
+                    TableCell(
+                        text = category.winner.ifEmpty { "-" },
+                        modifier = Modifier.weight(1f),
+                        style = textStyle
+                    )
+                    TableCell(
+                        text = if (category.points > 0) category.points.toString() else "-",
+                        modifier = Modifier.weight(1f),
+                        style = textStyle
+                    )
+                    TableCell(
+                        text = if (category.round > 0) category.round.toString() else "-",
+                        modifier = Modifier.weight(1f),
+                        style = textStyle
+                    )
                 }
                 HorizontalDivider(thickness = 0.5.dp, color = Color.Gray)
             }
@@ -104,10 +173,14 @@ fun TableHeader(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun TableCell(text: String, modifier: Modifier = Modifier) {
+fun TableCell(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium
+) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = style,
         modifier = modifier.padding(8.dp)
     )
 }

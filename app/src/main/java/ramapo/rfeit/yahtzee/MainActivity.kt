@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             YahtzeeTheme {
                 YahtzeeApp(modifier = Modifier.fillMaxSize())
