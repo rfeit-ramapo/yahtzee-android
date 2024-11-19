@@ -6,8 +6,42 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.io.PrintWriter
 
+/**
+ * The `Serializer` class handles saving and loading game state to/from files.
+ * It is responsible for serializing the current round, scorecard, and player data,
+ * as well as parsing previously saved data to restore game progress.
+ *
+ * @param context the Android context used for file operations. If null, saving and loading will always fail.
+ */
 class Serializer(private val context: Context?) {
 
+    /**
+     * Loads game data from a file, updating the round number, scorecard, and player objects.
+     *
+     * @param roundNum [MutableLiveData] of the round number.
+     * @param scorecard [MutableStateFlow] of the game's scorecard.
+     * @param humPlayer [MutableLiveData] of the human player object.
+     * @param compPlayer [MutableLiveData] of the computer player object.
+     * @param filename Name of the file to load data from.
+     *
+     * @return True if the file is successfully loaded and parsed; false otherwise.
+     *
+     * @reference Used ChatGPT to ask about accessing file directory for Android and to convert
+     * C++ version functions and classes before clean-up.
+     *
+     * @algorithm
+     * 1) Check if the context is null or if the file does not exist, and return false if either is true.
+     * 2) Open the file and iterate through its lines, trimming whitespace and skipping blank lines.
+     * 3) Parse the "Round:" line to extract the current round number.
+     * 4) Detect the "Scorecard:" line and begin parsing scorecard entries.
+     * 5) For each scorecard entry:
+     *    a) Skip entries with a score of 0.
+     *    b) Validate and parse the score, winner, and round number.
+     *    c) Add the parsed data to temporary lists for categories, scores, winners, and rounds.
+     * 6) Validate that all categories are accounted for (exactly 12 entries).
+     * 7) Update the round number, scorecard, and player objects with the parsed data.
+     * 8) Return true if all steps complete successfully, or false if an error occurs.
+     */
     fun loadGame(
         roundNum: MutableLiveData<Int>,
         scorecard: MutableStateFlow<Scorecard>,
@@ -98,7 +132,7 @@ class Serializer(private val context: Context?) {
 
             // Update round number and scorecard with parsed data
             roundNum.value = currentRound
-            scorecard.value?.fillMultiple(
+            scorecard.value.fillMultiple(
                 categories,
                 scores,
                 winners,
@@ -116,6 +150,29 @@ class Serializer(private val context: Context?) {
         }
     }
 
+    /**
+     * Saves the current game state to a file, including the round number and scorecard data.
+     *
+     * @param currentRound Current round number to save.
+     * @param scorecard [Scorecard] object containing the game's score data.
+     * @param fileName Name of the file to save data to.
+     *
+     * @return True if the game is successfully saved; false otherwise.
+     *
+     * @reference Used ChatGPT to ask about accessing file directory for Android and to convert
+     * C++ version functions and classes before clean-up.
+     *
+     * @algorithm
+     * 1) Check if the context is null, and return false if it is.
+     * 2) Open the file for writing using `context.openFileOutput()` in private mode.
+     * 3) Write the serialization header, including the current round number.
+     * 4) Write the "Scorecard:" line to mark the start of scorecard data.
+     * 5) Iterate through each category in the scorecard:
+     *    a) Write a 0 for categories that are not filled.
+     *    b) Write the score, winner, and round number for filled categories.
+     * 6) Close the writer and confirm successful saving with a console message.
+     * 7) Catch any exceptions that occur, log the error, and return false.
+     */
     fun saveGame(
         currentRound: Int,
         scorecard: Scorecard,
@@ -127,7 +184,7 @@ class Serializer(private val context: Context?) {
         }
 
         return try {
-            // Open the file for writing using context.openFileOutput()
+            // Open the file for writing
             val fileOutputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)
             val writer = PrintWriter(fileOutputStream)
 

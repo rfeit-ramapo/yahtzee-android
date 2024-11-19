@@ -22,17 +22,17 @@ class Dice {
     /**
      * The current values each die within the diceset.
      */
-    var diceList = MutableList(NUM_DICE) { 1 }
+    internal var diceList = MutableList(NUM_DICE) { 1 }
 
     /**
      * A count of each face value currently present in the dice.
      */
-    var diceCount = MutableList(NUM_DICE_FACES) { 0 }
+    internal var diceCount = MutableList(NUM_DICE_FACES) { 0 }
 
     /**
      * A count of locked dice for each face value.
      */
-    var locked = MutableList(NUM_DICE_FACES) { 0 }
+    internal var locked = MutableList(NUM_DICE_FACES) { 0 }
 
     /**
      * Rolls a single die and returns its value.

@@ -24,35 +24,6 @@ class Logger(private val context: Context?) {
     }
 
     /**
-     * Initializes the log by deleting any existing log file and starting a new log with an initial entry.
-     *
-     * @reference Used ChatGPT to ask about accessing file directory for Android.
-     */
-    private fun initializeLog() {
-        if (context == null) {
-            println("Context is null; cannot initialize log file.")
-            return
-        }
-
-        try {
-            val logFile = File(context.filesDir, LOG_FILE)
-
-            // Delete the log file if it exists.
-            if (logFile.exists()) {
-                logFile.delete()
-            }
-
-            // Write the initial line to a new log file.
-            logLine("Game Started")
-
-        } catch (e: Exception) {
-            // Log any exceptions that occur during initialization.
-            println("Error initializing log file: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    /**
      * Writes a single line to the log file or prints it to the console if the context is null.
      *
      * @param line the line to be written to the log file.
@@ -99,5 +70,34 @@ class Logger(private val context: Context?) {
 
         // Check if the log file exists and read its contents, or return a default message if it does not.
         return if (logFile.exists()) logFile.readText() else "No log entries found."
+    }
+
+    /**
+     * Initializes the log by deleting any existing log file and starting a new log with an initial entry.
+     *
+     * @reference Used ChatGPT to ask about accessing file directory for Android.
+     */
+    private fun initializeLog() {
+        if (context == null) {
+            println("Context is null; cannot initialize log file.")
+            return
+        }
+
+        try {
+            val logFile = File(context.filesDir, LOG_FILE)
+
+            // Delete the log file if it exists.
+            if (logFile.exists()) {
+                logFile.delete()
+            }
+
+            // Write the initial line to a new log file.
+            logLine("Game Started")
+
+        } catch (e: Exception) {
+            // Log any exceptions that occur during initialization.
+            println("Error initializing log file: ${e.message}")
+            e.printStackTrace()
+        }
     }
 }
