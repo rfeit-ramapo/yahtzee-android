@@ -38,7 +38,7 @@ enum class TurnPhase {
 
 @Preview(showBackground = true)
 @Composable
-fun TurnScreen(
+fun RoundScreen(
     onNext: () -> Unit = {},
     onEndGame: () -> Unit = {},
     gameViewModel: GameViewModel = GameViewModel(null),
@@ -59,12 +59,17 @@ fun TurnScreen(
             isHuman = playerTurn,
             gameViewModel = gameViewModel)
         TurnPhase.AVAILABLE_CATEGORIES -> AvailableCategoriesScreen(
-            onNext = { currentPhase.value = TurnPhase.PURSUE_CATEGORIES },
+            onNext =
+            {
+                gameViewModel.logAvailableCategories()
+                currentPhase.value = TurnPhase.PURSUE_CATEGORIES
+            },
             isHuman = playerTurn,
             gameViewModel = gameViewModel
         )
         TurnPhase.PURSUE_CATEGORIES -> PursueCategoriesScreen(
             onNext = {
+                gameViewModel.logPursuedCategories()
                 gameViewModel.clearSelectedCategories()
                 gameViewModel.nextRoll()
                 currentPhase.value = TurnPhase.ROLL
@@ -167,7 +172,7 @@ fun RollScreen(
         // Otherwise, show instructions and provide selection functionality
         else {
             TurnInstructionText(stringResource(R.string.reroll_instruction_human))
-            if (showHelp.value) TurnInstructionText(gameViewModel.getStratString(isHuman = true))
+            if (showHelp.value) TurnInstructionText(gameViewModel.getStratString())
             DiceSet(gameViewModel, true)
         }
 
@@ -178,11 +183,14 @@ fun RollScreen(
         ) {
             // If none are selected (and not the first roll), stand
             if ((selectedCount == 0) && (rollNum != 1)) {
-                StandButton(onNext)
+                StandButton({
+                    showHelp.value = false
+                    gameViewModel.setRoll(null)
+                    onNext()
+                })
             }
             // Otherwise, provide random and automatic options
             else {
-                println("selectedCount is $selectedCount")
                 RollButton({ onRoll() })
                 ManualDiceInput(if (rollNum == 1) 5 else selectedCount, {
                     diceValues -> onManualRoll(diceValues)
@@ -266,10 +274,10 @@ fun PursueCategoriesScreen(
         // Display instructions or explanation for available category selection
         if (isHuman) {
             TurnInstructionText(stringResource(R.string.pursue_categories_instructions_human))
-            if (showHelp.value) TurnInstructionText(gameViewModel.getStratString(isHuman = true))
+            if (showHelp.value) TurnInstructionText(gameViewModel.getStratString())
         } else {
             gameViewModel.autoSelectPursuedCategory()
-            TurnInstructionText(gameViewModel.getStratString(isHuman = false))
+            TurnInstructionText(gameViewModel.getStratString())
         }
 
         // Dice view
@@ -324,10 +332,10 @@ fun SelectCategoryScreen(
         else if (isHuman) {
             TurnInstructionText(stringResource(R.string.select_category_instructions_human))
             if (showHelp.value && currentPhase.value == SelectPhase.CATEGORY)
-                TurnInstructionText(gameViewModel.getStratString(isHuman = true))
+                TurnInstructionText(gameViewModel.getStratString())
         } else {
             gameViewModel.autoSelectPursuedCategory()
-            TurnInstructionText(gameViewModel.getStratString(isHuman = false))
+            TurnInstructionText(gameViewModel.getStratString())
         }
 
         // Dice view
@@ -363,7 +371,11 @@ fun SelectCategoryScreen(
         val nextStep = if (currentPhase.value == SelectPhase.CATEGORY) {
             {
                 showHelp.value = false
-                currentPhase.value = SelectPhase.INPUT
+                if (isCategoryAvailable) currentPhase.value = SelectPhase.INPUT
+                else {
+                    gameViewModel.finalizeTurn()
+                    onNext()
+                }
             }
         } else {
             {

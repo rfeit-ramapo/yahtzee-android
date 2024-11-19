@@ -1,5 +1,6 @@
 package ramapo.rfeit.yahtzee.ui.screens
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +24,6 @@ import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
 @Preview(showBackground = true)
 @Composable
 fun SerializeSaveScreen(
-    onNext: () -> Unit = {},
     gameViewModel: GameViewModel = GameViewModel(null)
 ) {
     // Track the file name entered by the user
@@ -37,7 +38,7 @@ fun SerializeSaveScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Enter the file name to save:",
+            text = "Save and quit:",
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -63,12 +64,16 @@ fun SerializeSaveScreen(
             )
         }
 
+        val app = (LocalContext.current as Activity)
         // Submit button
         Button(onClick = {
             // Call serializeLoad and handle success/failure
             val isSaved = gameViewModel.serializeSave(fileName)
+
             if (isSaved) {
-                onNext() // Go to the next screen if successful
+                // Quit the game
+                println("Saved! Exiting game.")
+                app.finish()
             } else {
                 isError.value = true // Show error message if saving fails
             }

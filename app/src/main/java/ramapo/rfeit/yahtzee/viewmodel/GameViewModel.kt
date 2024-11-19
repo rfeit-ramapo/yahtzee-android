@@ -15,6 +15,7 @@ import androidx.lifecycle.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import ramapo.rfeit.yahtzee.data.Logger
 import ramapo.rfeit.yahtzee.data.Player
 import ramapo.rfeit.yahtzee.data.Strategy
 import ramapo.rfeit.yahtzee.data.StrategyEngine
@@ -29,6 +30,9 @@ class GameViewModel(application: Application?): ViewModel() {
 
     // Serializer - create Serializer instance here
     private val _serializer = Serializer(application?.applicationContext)
+
+    // Logger
+    private val _logger = Logger(application?.applicationContext)
 
     // Players
     private val _humPlayer = MutableLiveData(Human())
@@ -63,6 +67,7 @@ class GameViewModel(application: Application?): ViewModel() {
     fun rollOneEach() {
         dieRollPlayer.value = _dice.value!!.rollOne()
         dieRollComp.value = _dice.value!!.rollOne()
+        logLine("The player rolled a ${dieRollPlayer.value} and the computer rolled a ${dieRollComp.value}")
     }
 
     fun serializeLoad(fileName: MutableState<String>): Boolean {
@@ -82,12 +87,14 @@ class GameViewModel(application: Application?): ViewModel() {
         _currPlayer.removeSource(_compPlayer)
         _currPlayer.removeSource(_humPlayer)
         _currPlayer.addSource(_humPlayer) { newValue -> _currPlayer.value = newValue }
+        logLine("Switching to Human turn.")
     }
 
     fun switchToComputer() {
         _currPlayer.removeSource(_humPlayer)
         _currPlayer.removeSource(_compPlayer)
         _currPlayer.addSource(_compPlayer) { newValue -> _currPlayer.value = newValue }
+        logLine("Switching to Computer turn.")
     }
 
     fun toggleSelectedDie(index: Int) {
@@ -112,6 +119,8 @@ class GameViewModel(application: Application?): ViewModel() {
             diceFaces.value!!.filterIndexed { index, _ ->
             selectedDice.value!!.getOrNull(index) == true
         }
+        logLine("Rerolling dice: $keptDice")
+
         // Convert the kept dice into a count of each face using listToCount
         val keptDiceCount = _dice.value!!.listToCount(keptDice)
 
@@ -129,11 +138,13 @@ class GameViewModel(application: Application?): ViewModel() {
         _dice.value!!.manualRoll(rollValues)
         // Explicitly update tp notify UI of change
         _dice.value = _dice.value
+        logLine("Manually rolled dice: ${_dice.value}")
         updateStrategy()
     }
 
     fun autoRoll() {
         _dice.value!!.rollAll()
+        logLine("Automatically rolled dice: ${_dice.value}")
         updateStrategy()
     }
 
@@ -182,7 +193,7 @@ class GameViewModel(application: Application?): ViewModel() {
     }
 
     fun getStrictAvailableCategories(): MutableList<Int> {
-        return _strategyEngine.getPossibleCategories(_scorecard.value, _dice.value!!, true)
+       return _strategyEngine.getPossibleCategories(_scorecard.value, _dice.value!!, true)
     }
 
     fun getAllAvailableCategories(): MutableList<Int> {
@@ -216,7 +227,8 @@ class GameViewModel(application: Application?): ViewModel() {
         _selectedCategories.value = emptyList()
     }
 
-    fun getStratString(isHuman: Boolean): String {
+    fun getStratString(): String {
+        val isHuman = currPlayer.value is Human
         return _strategy.value?.getString(isHuman) ?: "No available categories to pursue."
     }
 
@@ -242,26 +254,30 @@ class GameViewModel(application: Application?): ViewModel() {
     fun finalizeTurn(inPoints: Int? = null, inRound: Int? = null): Boolean {
         val categoryIndex = selectedCategories.value.firstOrNull()
 
-        // If not filling a category, just reset the dice and return
+        // If no category was fillable
         if (categoryIndex == null) {
-            _dice.value!!.resetDice()
-            _dice.value = _dice.value
-            return true
+            logLine("Skipping turn because no categories are fillable given the current diceset.")
         }
+        // Fill the selected category after confirming point and round numbers
+        else {
+            val points = getScoredPoints(categoryIndex)
+            val round = _roundNum.value!!
+            val categoryName = _scorecard.value.categories[categoryIndex].name
 
-        val points = getScoredPoints(categoryIndex)
-        val round = _roundNum.value!!
+            // Validate any inputs
+            if (inPoints != null && inRound != null) {
+                if (inPoints != points || inRound != round) return false
+            }
+            _scorecard.value.fillCategory(categoryIndex, points, round, _currPlayer.value!!.internalName)
+            _currPlayer.value!!.addScore(points)
 
-        // Validate any inputs
-        if (inPoints != null && inRound != null) {
-            if (inPoints != points || inRound != round) return false
+            logLine("${currPlayer.value?.internalName} filled the $categoryName category with $points points in Round $round")
         }
-        _scorecard.value.fillCategory(categoryIndex, points, round, _currPlayer.value!!.internalName)
 
         clearSelectedCategories()
-        _currPlayer.value!!.addScore(points)
         _humPlayer.value = _humPlayer.value
         _compPlayer.value = _compPlayer.value
+        logLine("The scores are now ${humScore.value} (Human) and ${compScore.value} (Computer)")
         _dice.value!!.resetDice()
         _dice.value = _dice.value
 
@@ -270,18 +286,38 @@ class GameViewModel(application: Application?): ViewModel() {
 
     fun nextRound() {
         _roundNum.value = _roundNum.value!! + 1
+        logLine("\nStarting Round ${roundNum.value}")
     }
 
-    // create the round summary screen
-    // create end screen
-    // fix up the determine player screen to work for already determined player
-    // test an entire game
-    // add in the load option to the intro screen and confirm that it works
-    // add in a save option to the round summary screen
-    // test that saving and loading works
+    fun readLog(): String {
+        return _logger.readLog()
+    }
 
-    // clean up entire thing
-    // add the log stuff as you go and log button to help area
+    fun logLine(line: String): Boolean {
+        return _logger.logLine(line)
+    }
+
+    fun logAvailableCategories() {
+        val availableCategories = getStrictAvailableCategories()
+        val categoryNames = availableCategories.map { index ->
+            _scorecard.value.categories[index].name
+        }
+        logLine("Available categories: $categoryNames")
+    }
+
+    fun logPursuedCategories() {
+        val pursuedCategories = selectedCategories.value.map {
+            index -> _scorecard.value.categories[index].name
+        }
+        logLine("The player chose to pursue $pursuedCategories")
+    }
+
+    fun logEndGame() {
+        logLine("\nGame Complete")
+        if (humScore.value!! > compScore.value!!) logLine("Human won the game with ${humScore.value} points to the Computer's ${compScore.value}")
+        else if (compScore.value!! > humScore.value!!) logLine("Computer won the game with ${compScore.value} points to the Human's ${humScore.value}")
+        else logLine("Both players tied with ${humScore.value} points")
+    }
 
     // Round number
     private val _roundNum = MutableLiveData(1)

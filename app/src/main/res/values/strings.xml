@@ -12,7 +12,7 @@
     <string name="stand_instruction_comp">The computer has decided to stand. Press next to continue.</string>
     <string name="available_categories_instructions_human">Please select all available categories given the dice set below.</string>
     <string name="available_categories_instructions_computer">The computer has selected all available categories given the dice set below.</string>
-    <string name="error">An error ocurred.</string>
+    <string name="error">An error occurred.</string>
     <string name="incorrect_available">Incorrect categories selected. Please try again.</string>
     <string name="roll">"Roll: "</string>
     <string name="hum_score">"Your score: "</string>
@@ -23,4 +23,8 @@
     <string name="no_category_error">Error: Please select a category to fill.</string>
     <string name="wrong_scorecard_inputs_error">Incorrect input for Round or Points Earned. Please try again.</string>
     <string name="round_summary">The round has ended. See the summary below.</string>
+    <string name="game_summary">The game is over! A summary is provided below. Hit next to start a new game.</string>
+    <string name="human_won">You won!</string>
+    <string name="computer_won">The computer won!\n</string>
+    <string name="tie">It was a tie!</string>
 </resources>

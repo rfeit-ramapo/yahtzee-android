@@ -40,6 +40,7 @@ fun RoundSummaryScreen(
             gameViewModel.nextRound()
             onNext()
         })
+        SerializeSaveScreen(gameViewModel)
         ScorecardTable(gameViewModel)
     }
 }

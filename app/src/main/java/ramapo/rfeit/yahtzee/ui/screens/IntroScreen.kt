@@ -8,21 +8,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ramapo.rfeit.yahtzee.R
-import ramapo.rfeit.yahtzee.ui.components.DiceSet
 import ramapo.rfeit.yahtzee.ui.components.NextButton
-import ramapo.rfeit.yahtzee.ui.components.ScorecardTable
+import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
 
+@Preview(showBackground = true)
 @Composable
-fun IntroScreen(onStartGame: () -> Unit = {}, onLoadGame: () -> Unit = {}) {
+fun IntroScreen(onNext: () -> Unit = {}, gameViewModel: GameViewModel = GameViewModel(null)) {
     Column(
-        modifier = Modifier.fillMaxWidth(), // This stretches the Column to the full width of the screen
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         IntroText()
-        NextButton(onStartGame)
+        NextButton(onNext)
+        SerializeLoadScreen(onNext, gameViewModel)
     }
 }
 

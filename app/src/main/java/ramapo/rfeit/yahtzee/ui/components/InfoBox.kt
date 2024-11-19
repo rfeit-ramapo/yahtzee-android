@@ -65,10 +65,9 @@ fun InfoBox(
             onDismissRequest = { showLogDialog.value = false },
             title = { Text("Game Log") },
             text = {
-                val logFile = File(context.filesDir, "log.txt")
-                val logContent = if (logFile.exists()) logFile.readText() else "No log entries found."
+                val logContent = gameViewModel.readLog()
 
-                Box(modifier = Modifier.fillMaxHeight(0.7f)) {
+                Box(modifier = Modifier.fillMaxHeight(0.7f).fillMaxWidth(0.9f)) {
                     Text(
                         text = logContent,
                         modifier = Modifier.verticalScroll(rememberScrollState())
@@ -218,7 +217,3 @@ fun InfoText(string: String) {
         modifier = Modifier.padding(2.dp)
     )
 }
-
-// scorecard
-// current scores
-// view log button

@@ -1,51 +1,26 @@
 package ramapo.rfeit.yahtzee.data
 
-import java.util.*
-
+/**
+ * Represents a player within the game.
+ * Abstract class with more specific subclasses of Human and Computer.
+ *
+ * @param internalName the name to use internally and for scorecard for this player.
+ * @param score an [Integer] representing how many points this player has earned.
+ */
 abstract class Player(
-    val logName: String,
-    val internalName: String,
-    var score: Int = 0
+    internal val internalName: String,
+    internal var score: Int = 0
 ) {
 
-    // Mutators
+    /**
+     * Adds a value to the current score of this player.
+     *
+     * @param add the [Integer] value to add to the score.
+     * @return Unit
+     *
+     * @reference Used ChatGPT to convert C++ version functions and classes before clean-up.
+     */
     fun addScore(add: Int) {
         score += add
     }
-
-    // Functions
-    /* *********************************************************************
-    Function Name: RollAll
-    Purpose: Rolls all unlocked dice for the player
-    Parameters:
-                dice, a reference to the dice set to be rerolled
-    Return Value: a list of the newly generated dice face values
-    Algorithm:
-        1) Checks if the player wants to manually input the roll
-            2) If so, gets new values for unlocked dice
-        3) Otherwise, uses automatic reroll function
-    Reference: none
-    ********************************************************************* */
-    fun rollAll(dice: Dice): List<Int> {
-
-        // Automatically reroll dice that are unlocked
-        return dice.rollAll()
-    }
-
-    // Virtual Functions (abstract methods)
-
-    // Roll one die (abstract, to be implemented by subclasses)
-    abstract fun rollOne(dice: Dice): Int
-
-    // List available categories (abstract, to be implemented by subclasses)
-    abstract fun listAvailableCategories(strat: StrategyEngine, dice: Dice): List<Int>
-
-    // Pursue categories (abstract, to be implemented by subclasses)
-    abstract fun pursueCategories(strat: StrategyEngine, availableCategories: List<Int>, dice: Dice)
-
-    // Handle rerolls (abstract, to be implemented by subclasses)
-    abstract fun handleRerolls(dice: Dice): Boolean
-
-    // Choose category (abstract, to be implemented by subclasses)
-    abstract fun chooseCategory(scorecard: Scorecard, round: Int, strat: StrategyEngine, availableCategories: List<Int>, dice: Dice)
 }

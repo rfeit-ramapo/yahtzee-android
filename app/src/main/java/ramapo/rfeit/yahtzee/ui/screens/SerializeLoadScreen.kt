@@ -37,7 +37,7 @@ fun SerializeLoadScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Enter the file name to load:",
+            text = "Load a saved game:",
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -68,8 +68,10 @@ fun SerializeLoadScreen(
             // Call serializeLoad and handle success/failure
             val isLoaded = gameViewModel.serializeLoad(fileName)
             if (isLoaded) {
+                gameViewModel.logLine("Successfully loaded game from ${fileName.value}")
                 onNext() // Go to the next screen if successful
             } else {
+                gameViewModel.logLine("Unable to load game from ${fileName.value}")
                 isError.value = true // Show error message if loading fails
             }
         }) {

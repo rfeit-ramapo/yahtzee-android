@@ -7,45 +7,74 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ramapo.rfeit.yahtzee.viewmodel.GameViewModel
 import ramapo.rfeit.yahtzee.ui.screens.DeterminePlayerScreen
 import ramapo.rfeit.yahtzee.ui.screens.EndScreen
 import ramapo.rfeit.yahtzee.ui.screens.IntroScreen
 import ramapo.rfeit.yahtzee.ui.screens.RoundSummaryScreen
-import ramapo.rfeit.yahtzee.ui.screens.SerializeLoadScreen
-import ramapo.rfeit.yahtzee.ui.screens.SerializeSaveScreen
-import ramapo.rfeit.yahtzee.ui.screens.TurnScreen
-import ramapo.rfeit.yahtzee.viewmodel.GameViewModelFactory
+import ramapo.rfeit.yahtzee.ui.screens.RoundScreen
 
+// Class to hold all the main screens of the game. Managed by ScreenManager function.
 enum class GameScreen {
-    INTRO, DETERMINE_PLAYER, SERIALIZE_LOAD, SERIALIZE_SAVE, GAME_END, ROUND, ROUND_SUMMARY
+    INTRO, DETERMINE_PLAYER, GAME_END, ROUND, ROUND_SUMMARY
 }
 
+/**
+ * Manages and displays active UI screen for the app, changing based on the game state.
+ *
+ * @return Unit
+ *
+ * @algorithm
+ * 1) Obtain the application context to initialize the [GameViewModel].
+ * 2) Remember and track the current screen state.
+ * 3) Display the Screen Composable based on current screen state.
+ *
+ * @reference None.
+ */
 @Composable
 fun ScreenManager() {
+
+    // Load the application context to create the GameViewModel for this Tournament.
+    val context = LocalContext.current.applicationContext as Application
+    var gameViewModel: GameViewModel by remember {
+        mutableStateOf(GameViewModel(context))
+    }
+
+    // Remember current screen to cause automatic recomposition.
     var currentScreen by remember { mutableStateOf(GameScreen.INTRO) }
 
-    // Use ViewModelProvider with a custom factory
-    val context = LocalContext.current.applicationContext as Application
-    val gameViewModel: GameViewModel = viewModel(factory = GameViewModelFactory(context))
-
+    // Change which screen is displayed based on above variable.
     when (currentScreen) {
         GameScreen.INTRO -> IntroScreen(
-            onStartGame = { currentScreen = GameScreen.DETERMINE_PLAYER },
-            onLoadGame = { currentScreen = GameScreen.SERIALIZE_LOAD })
-        GameScreen.DETERMINE_PLAYER -> DeterminePlayerScreen(onNext = {currentScreen = GameScreen.ROUND}, gameViewModel = gameViewModel)
-        GameScreen.ROUND -> TurnScreen(
-            onNext = { currentScreen = GameScreen.ROUND_SUMMARY},
-            onEndGame = { currentScreen = GameScreen.GAME_END},
-            gameViewModel = gameViewModel)
-        GameScreen.ROUND_SUMMARY -> RoundSummaryScreen({currentScreen = GameScreen.DETERMINE_PLAYER}, gameViewModel)
-        GameScreen.SERIALIZE_LOAD -> SerializeLoadScreen(
-            onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
-            gameViewModel = gameViewModel)
-        GameScreen.SERIALIZE_SAVE -> SerializeSaveScreen(
-            onNext = { currentScreen = GameScreen.DETERMINE_PLAYER},
-            gameViewModel = gameViewModel)
-        GameScreen.GAME_END -> EndScreen()
+            {
+                gameViewModel.logLine("\nStarting Round ${gameViewModel.roundNum.value}")
+                currentScreen = GameScreen.DETERMINE_PLAYER
+            },
+            gameViewModel)
+
+        GameScreen.DETERMINE_PLAYER -> DeterminePlayerScreen(
+            { currentScreen = GameScreen.ROUND },
+            gameViewModel)
+
+        GameScreen.ROUND -> RoundScreen(
+            { currentScreen = GameScreen.ROUND_SUMMARY},
+            {
+                gameViewModel.logEndGame()
+                currentScreen = GameScreen.GAME_END
+            },
+            gameViewModel)
+
+        GameScreen.ROUND_SUMMARY -> RoundSummaryScreen(
+            { currentScreen = GameScreen.DETERMINE_PLAYER },
+            gameViewModel)
+
+        GameScreen.GAME_END -> EndScreen(
+            {
+                // Reset all game data before restarting
+                gameViewModel = GameViewModel(context)
+                currentScreen = GameScreen.INTRO
+            },
+            gameViewModel
+        )
     }
 }

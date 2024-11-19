@@ -139,7 +139,7 @@ class Serializer(private val context: Context?) {
             val categories = scorecard.categories
             for (i in 0 until Scorecard.NUM_CATEGORIES) {
                 // If this category is not filled, just write a 0
-                if (!categories[i].isFull()) {
+                if (!categories[i].full) {
                     writer.println("0")
                 } else {
                     // Otherwise, output all info to the file

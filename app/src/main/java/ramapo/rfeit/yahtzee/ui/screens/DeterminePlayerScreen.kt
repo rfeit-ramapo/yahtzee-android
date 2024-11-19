@@ -51,13 +51,7 @@ fun DeterminePlayerScreen(
     // Skip screen if scores are not equal
     val playerScore = gameViewModel.humScore.observeAsState(0).value
     val compScore = gameViewModel.compScore.observeAsState(0).value
-    if (playerScore > compScore) {
-        gameViewModel.switchToComputer()
-        onNextClick()
-    } else if (playerScore < compScore) {
-        gameViewModel.switchToHuman()
-        onNextClick()
-    }
+    val isRollNeeded = playerScore == compScore
 
     Column(
         modifier = Modifier.fillMaxWidth(), // This stretches the Column to the full width of the screen
@@ -66,13 +60,13 @@ fun DeterminePlayerScreen(
 
         // Display the result text based on the dice roll
         when {
-            isFirstLoad.value -> {
+            isFirstLoad.value && isRollNeeded -> {
                 DeterminePlayerText(R.string.determine_player)
             }
-            dieRollPlayer == dieRollComp -> {
+            (dieRollPlayer == dieRollComp && isRollNeeded) -> {
                 DeterminePlayerText(R.string.determine_player_tie)
             }
-            dieRollPlayer > dieRollComp -> {
+            (dieRollPlayer > dieRollComp && isRollNeeded) || playerScore < compScore -> {
                 gameViewModel.switchToHuman()
                 DeterminePlayerText(R.string.determine_player_human)
             }
@@ -82,19 +76,21 @@ fun DeterminePlayerScreen(
             }
         }
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Die(value = dieRollPlayer)
-            Die(value = dieRollComp)
+        if (isRollNeeded || !isFirstLoad.value) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Die(value = dieRollPlayer)
+                Die(value = dieRollComp)
+            }
+            Spacer(Modifier.padding(10.dp))
         }
 
-        Spacer(Modifier.padding(10.dp))
 
         // Show the correct button based on the dice result
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            if ((dieRollPlayer == dieRollComp) || isFirstLoad.value) {
+            if ((isRollNeeded && (isFirstLoad.value || (dieRollPlayer == dieRollComp))) ) {
                 RollButton(onRoll = onRollClick)
                 ManualDiceInput(num = 2, { diceValues ->
                     gameViewModel.dieRollPlayer.value = diceValues[0]
